@@ -108,3 +108,18 @@ if (!file || !(file instanceof File)) {
 
 **Implication for S06:** During end-to-end home-network testing, confirm the stable LAN address first, then regenerate (reload the context page) to get a QR encoding the correct LAN URL before printing.
 
+## Playwright browser_upload_file triggers React's onChange on hidden file inputs
+
+**Context:** Testing file upload flows in Next.js/React 19 apps with Playwright via the browser tool.
+
+**Gotcha:** Programmatic approaches (DataTransfer + dispatchEvent) do NOT trigger React's synthetic onChange handler. Only Playwright's native `setInputFiles` (used by `browser_upload_file`) correctly triggers the React event system — even when the `<input type="file" style={{ display: "none" }}>` is hidden. Use `browser_upload_file` targeting the hidden input directly; no need to click the visible trigger button first.
+
+**Pattern:** Upload works on `display: none` inputs. After calling `browser_upload_file`, wait for the upload phase UI to appear before asserting anything.
+
+## Next.js dev server silently picks a different port when 3000 is occupied
+
+**Context:** Running `npm run dev` while another process holds port 3000.
+
+**Gotcha:** Next.js logs "Port 3000 is in use by an unknown process, using available port 3001 instead." but still starts successfully. `bg_shell wait_for_ready` detects readiness on the wrong port check if you only probe 3000. Always use `bg_shell highlights` to read the actual "Local: http://localhost:XXXX" line before navigating in the browser.
+
+

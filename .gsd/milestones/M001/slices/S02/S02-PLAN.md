@@ -54,7 +54,7 @@
   - Verify: `sqlite3 data/fridges.db ".schema intake_drafts"` shows the table; `curl -s -X POST http://localhost:3000/api/intake/<fridgeId> -F "photo=@<any-jpg>" | jq '.items | length'` returns > 0; `npx tsc --noEmit` exits 0
   - Done when: Route handler returns draft items from stub extraction for a valid fridge, returns 404 JSON for invalid fridge, returns 400 JSON for missing photo, and `intake_drafts` table exists in schema
 
-- [ ] **T02: Build review UI and wire intake flow into fridge context page** `est:45m`
+- [x] **T02: Build review UI and wire intake flow into fridge context page** `est:45m`
   - Why: Closes the slice by providing the human review-and-confirm interface that makes photo intake trustworthy. Replaces the inventory placeholder on the fridge context page with the full intake section.
   - Files: `app/fridges/[fridgeId]/IntakeSection.tsx`, `app/fridges/[fridgeId]/actions.ts`, `app/fridges/[fridgeId]/page.tsx`
   - Do: Build `IntakeSection.tsx` client component with state machine (idle → uploading → review → confirming → done | error). File picker triggers POST to `/api/intake/[fridgeId]`. Draft rows are editable (name, quantity, unit) with delete button; low-confidence rows show yellow warning badge. Confirm button calls `confirmDraftAction` Server Action. Create `actions.ts` with `confirmDraftAction` that validates items and writes to `intake_drafts` via `saveDraftItems`. Replace the dashed "inventory" placeholder div in `page.tsx` with `<IntakeSection fridgeId={fridge.id} />`. Use `var(--color-*)` CSS custom properties matching the existing dark industrial design. Assign `nanoid(10)` IDs to draft rows on the client for stable React keys.

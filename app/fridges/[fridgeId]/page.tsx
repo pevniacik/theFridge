@@ -10,6 +10,7 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { getFridgeById } from "@/lib/fridges/store";
 import QrCode from "@/components/QrCode";
+import IntakeSection from "./IntakeSection";
 
 interface Props {
   params: Promise<{ fridgeId: string }>;
@@ -235,30 +236,7 @@ export default async function FridgeContextPage({ params }: Props) {
         </div>
       </div>
 
-      {/* Inventory placeholder (wired in T03) */}
-      <div
-        style={{
-          padding: "2.5rem 1.5rem",
-          border: "1px dashed var(--color-border)",
-          borderRadius: "var(--radius-card)",
-          textAlign: "center",
-          color: "var(--color-muted)",
-          fontSize: "0.875rem",
-        }}
-      >
-        <p
-          style={{
-            fontFamily: "var(--font-display)",
-            fontSize: "0.6875rem",
-            letterSpacing: "0.15em",
-            textTransform: "uppercase",
-            marginBottom: "0.5rem",
-          }}
-        >
-          inventory
-        </p>
-        <p>Items will appear here once the data layer is connected.</p>
-      </div>
+      <IntakeSection fridgeId={fridge.id} />
 
       {/* Actions */}
       <div style={{ marginTop: "2rem", display: "flex", gap: "1rem", alignItems: "center" }}>
