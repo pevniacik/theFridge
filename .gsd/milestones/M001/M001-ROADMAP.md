@@ -53,7 +53,7 @@ This milestone is complete only when all are true:
 
 ## Slices
 
-- [ ] **S01: QR identity and local fridge entry** `risk:medium` `depends:[]`
+- [x] **S01: QR identity and local fridge entry** `risk:medium` `depends:[]`
   > After this: You can create a printable QR code for a fridge/freezer, scan it, and enter the correct storage context in the local web app.
 
 - [ ] **S02: Photo intake with review-first draft** `risk:high` `depends:[S01]`

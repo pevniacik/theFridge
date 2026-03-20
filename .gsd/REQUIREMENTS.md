@@ -2,41 +2,9 @@
 
 This file is the explicit capability and coverage contract for the project.
 
-Use it to track what is actively in scope, what has been validated by completed work, what is intentionally deferred, and what is explicitly out of scope.
-
-Guidelines:
-- Keep requirements capability-oriented, not a giant feature wishlist.
-- Requirements should be atomic, testable, and stated in plain language.
-- Every **Active** requirement should be mapped to a slice, deferred, blocked with reason, or moved out of scope.
-- Each requirement should have one accountable primary owner and may have supporting slices.
-- Research may suggest requirements, but research does not silently make them binding.
-- Validation means the requirement was actually proven by completed work and verification, not just discussed.
-
 ## Active
 
-### R001 — Household can enter a specific fridge/freezer context via printable QR code
-- Class: primary-user-loop
-- Status: active
-- Description: A person can scan a printable QR code attached to a fridge or freezer and enter that exact storage context in the local web app.
-- Why it matters: It ties the digital inventory to the physical place someone is standing at and reduces context confusion.
-- Source: user
-- Primary owning slice: M001/S01
-- Supporting slices: M001/S06
-- Validation: mapped
-- Notes: Version 1 assumes home-network access over Wi‑Fi.
-
-### R002 — Household can generate printable QR codes for each fridge/freezer
-- Class: core-capability
-- Status: active
-- Description: The app can create QR codes that are printable and uniquely identify a fridge/freezer context.
-- Why it matters: The QR entry flow depends on the app being able to create the physical identity token itself.
-- Source: user
-- Primary owning slice: M001/S01
-- Supporting slices: M001/S06
-- Validation: mapped
-- Notes: Printable output matters, not just on-screen display.
-
-### R003 — Household can capture groceries with a photo and get a draft inventory
+### R003 — A grocery photo can be uploaded from the web app and converted into a draft set of candidate items.
 - Class: core-capability
 - Status: active
 - Description: A grocery photo can be uploaded from the web app and converted into a draft set of candidate items.
@@ -47,7 +15,7 @@ Guidelines:
 - Validation: mapped
 - Notes: The draft may be uncertain and must not silently become truth.
 
-### R004 — Household can confirm or correct drafted items before they become inventory truth
+### R004 — Drafted items can be reviewed and edited before being committed into live inventory.
 - Class: failure-visibility
 - Status: active
 - Description: Drafted items can be reviewed and edited before being committed into live inventory.
@@ -58,7 +26,7 @@ Guidelines:
 - Validation: mapped
 - Notes: This is especially important for names, storage placement, and expiry details.
 
-### R005 — Inventory tracks item-level presence within a fridge/freezer context
+### R005 — The system stores item-level inventory for each fridge/freezer rather than only broad categories.
 - Class: primary-user-loop
 - Status: active
 - Description: The system stores item-level inventory for each fridge/freezer rather than only broad categories.
@@ -69,7 +37,7 @@ Guidelines:
 - Validation: mapped
 - Notes: Version 1 can be presence-first rather than exact-unit heavy.
 
-### R006 — Inventory supports expiry dates and estimated expiry when no producer date exists
+### R006 — The system stores explicit expiry dates when known and allows estimated expiry when the food has no printed producer date.
 - Class: core-capability
 - Status: active
 - Description: The system stores explicit expiry dates when known and allows estimated expiry when the food has no printed producer date.
@@ -80,9 +48,9 @@ Guidelines:
 - Validation: mapped
 - Notes: User-provided estimation is part of the intended experience.
 
-### R007 — Household can explicitly update, reduce, remove, or discard items after use
+### R007 — After cooking, eating, moving, or throwing food away, household members can update the inventory so it stays truthful.
 - Class: continuity
-n- Status: active
+- Status: active
 - Description: After cooking, eating, moving, or throwing food away, household members can update the inventory so it stays truthful.
 - Why it matters: Intake alone is not enough; stale inventory breaks trust.
 - Source: user
@@ -91,7 +59,7 @@ n- Status: active
 - Validation: mapped
 - Notes: Version 1 favors explicit actions over inference.
 
-### R008 — User can request the current status of a fridge/freezer and trust the answer
+### R008 — The app can show the current item-level state of a selected fridge/freezer on demand.
 - Class: primary-user-loop
 - Status: active
 - Description: The app can show the current item-level state of a selected fridge/freezer on demand.
@@ -102,7 +70,7 @@ n- Status: active
 - Validation: mapped
 - Notes: Trustworthiness matters more than decorative presentation.
 
-### R009 — App surfaces aging, expiring, or long-forgotten food that needs attention
+### R009 — The app highlights items that are aging, nearing expiry, or effectively forgotten in storage.
 - Class: launchability
 - Status: active
 - Description: The app highlights items that are aging, nearing expiry, or effectively forgotten in storage.
@@ -113,7 +81,7 @@ n- Status: active
 - Validation: mapped
 - Notes: Freezer-forgotten items are explicitly important.
 
-### R010 — App suggests what to cook from current inventory, biased toward using what is on hand
+### R010 — The app generates cooking suggestions from the current inventory, with preference toward using available or aging ingredients.
 - Class: differentiator
 - Status: active
 - Description: The app generates cooking suggestions from the current inventory, with preference toward using available or aging ingredients.
@@ -124,7 +92,7 @@ n- Status: active
 - Validation: mapped
 - Notes: Suggestions should stay grounded in current inventory, not generic inspiration.
 
-### R011 — Version 1 runs locally on the home network over Wi‑Fi
+### R011 — The first version is usable as a local web app reachable within the home network.
 - Class: constraint
 - Status: active
 - Description: The first version is usable as a local web app reachable within the home network.
@@ -135,7 +103,7 @@ n- Status: active
 - Validation: mapped
 - Notes: Public domain hosting belongs to a later milestone.
 
-### R012 — Public web deployment with its own domain is supported as a later phase
+### R012 — A later milestone extends the app into a public, domain-hosted version for broader access.
 - Class: launchability
 - Status: active
 - Description: A later milestone extends the app into a public, domain-hosted version for broader access.
@@ -146,7 +114,7 @@ n- Status: active
 - Validation: unmapped
 - Notes: This is not part of M001 implementation.
 
-### R013 — Shared household usage is supported
+### R013 — More than one person in a household can use the system against the same fridge/freezer inventory.
 - Class: primary-user-loop
 - Status: active
 - Description: More than one person in a household can use the system against the same fridge/freezer inventory.
@@ -157,7 +125,7 @@ n- Status: active
 - Validation: mapped
 - Notes: M001 can keep household access simple as long as the shared flow works.
 
-### R014 — Failure states are visible enough that bad scans or uncertain AI drafts do not silently corrupt inventory
+### R014 — The app surfaces uncertainty, bad scans, and review requirements rather than silently mutating inventory with wrong data.
 - Class: failure-visibility
 - Status: active
 - Description: The app surfaces uncertainty, bad scans, and review requirements rather than silently mutating inventory with wrong data.
@@ -170,11 +138,31 @@ n- Status: active
 
 ## Validated
 
-None yet.
+### R001 — A person can scan a printable QR code attached to a fridge or freezer and enter that exact storage context in the local web app.
+- Class: primary-user-loop
+- Status: validated
+- Description: A person can scan a printable QR code attached to a fridge or freezer and enter that exact storage context in the local web app.
+- Why it matters: It ties the digital inventory to the physical place someone is standing at and reduces context confusion.
+- Source: user
+- Primary owning slice: M001/S01
+- Supporting slices: M001/S06
+- Validation: S01 verified: valid fridge IDs resolve the correct storage-context page at /fridges/[fridgeId]; the QR URL encodes the exact same route; opening the QR URL loads the correct context. All 7 slice checks pass.
+- Notes: QR scanning on localhost confirmed. Real home-network LAN scanning is deferred to S06 per roadmap proof strategy.
+
+### R002 — The app can create QR codes that are printable and uniquely identify a fridge/freezer context.
+- Class: core-capability
+- Status: validated
+- Description: The app can create QR codes that are printable and uniquely identify a fridge/freezer context.
+- Why it matters: The QR entry flow depends on the app being able to create the physical identity token itself.
+- Source: user
+- Primary owning slice: M001/S01
+- Supporting slices: M001/S06
+- Validation: S01 verified: the app generates SVG QR codes server-side (lib/qr/generate.ts) encoding each fridge/freezer's full context URL. QR is rendered on the storage-context page and is print-ready. QR URL was confirmed to match the route contract via curl inspection.
+- Notes: SVG output is printable without external image requests. LAN IP routing in QR URLs is handled via x-forwarded-proto + host headers; full home-network print verification deferred to S06.
 
 ## Deferred
 
-### R015 — Detailed quantity units beyond presence-first tracking
+### R015 — Track detailed units and amounts beyond simple presence-first inventory.
 - Class: quality-attribute
 - Status: deferred
 - Description: Track detailed units and amounts beyond simple presence-first inventory.
@@ -185,7 +173,7 @@ None yet.
 - Validation: unmapped
 - Notes: Deferred because version 1 can still be useful without precise unit math.
 
-### R016 — Advanced household statistics and trend analysis
+### R016 — Provide richer historical analytics, usage trends, or waste statistics.
 - Class: differentiator
 - Status: deferred
 - Description: Provide richer historical analytics, usage trends, or waste statistics.
@@ -196,7 +184,7 @@ None yet.
 - Validation: unmapped
 - Notes: Not required for first launch usefulness.
 
-### R017 — Multiple households or public multi-tenant onboarding flows
+### R017 — Support many distinct households with hosted onboarding and broader account flows.
 - Class: admin/support
 - Status: deferred
 - Description: Support many distinct households with hosted onboarding and broader account flows.
@@ -207,7 +195,7 @@ None yet.
 - Validation: unmapped
 - Notes: Deferred to the public version.
 
-### R018 — Rich recipe system with missing-ingredient planning and broad inspiration beyond on-hand inventory
+### R018 — Expand cooking guidance into deeper recipe workflows that include missing ingredients and broader exploration.
 - Class: differentiator
 - Status: deferred
 - Description: Expand cooking guidance into deeper recipe workflows that include missing ingredients and broader exploration.
@@ -220,7 +208,7 @@ None yet.
 
 ## Out of Scope
 
-### R019 — Native mobile app for version 1
+### R019 — A native mobile app is explicitly not part of the first version.
 - Class: constraint
 - Status: out-of-scope
 - Description: A native mobile app is explicitly not part of the first version.
@@ -231,7 +219,7 @@ None yet.
 - Validation: n/a
 - Notes: Version 1 is a local web app.
 
-### R020 — Fully automatic inventory truth without confirmation or explicit updates
+### R020 — The app should not silently maintain inventory as if the AI can always infer reality correctly.
 - Class: anti-feature
 - Status: out-of-scope
 - Description: The app should not silently maintain inventory as if the AI can always infer reality correctly.
@@ -242,7 +230,7 @@ None yet.
 - Validation: n/a
 - Notes: Review-first and explicit updates are deliberate design choices.
 
-### R021 — Precision nutrition, calorie tracking, or diet coaching in version 1
+### R021 — Nutrition analytics and diet coaching are excluded from the first version.
 - Class: anti-feature
 - Status: out-of-scope
 - Description: Nutrition analytics and diet coaching are excluded from the first version.
@@ -253,7 +241,7 @@ None yet.
 - Validation: n/a
 - Notes: The current product is about inventory truth, waste prevention, and grounded cooking suggestions.
 
-### R022 — Barcode-first product catalog as the primary intake path
+### R022 — Version 1 should not be shaped primarily around barcode scanning and packaged-product cataloging.
 - Class: anti-feature
 - Status: out-of-scope
 - Description: Version 1 should not be shaped primarily around barcode scanning and packaged-product cataloging.
@@ -268,8 +256,8 @@ None yet.
 
 | ID | Class | Status | Primary owner | Supporting | Proof |
 |---|---|---|---|---|---|
-| R001 | primary-user-loop | active | M001/S01 | M001/S06 | mapped |
-| R002 | core-capability | active | M001/S01 | M001/S06 | mapped |
+| R001 | primary-user-loop | validated | M001/S01 | M001/S06 | S01 verified: valid fridge IDs resolve the correct storage-context page at /fridges/[fridgeId]; the QR URL encodes the exact same route; opening the QR URL loads the correct context. All 7 slice checks pass. |
+| R002 | core-capability | validated | M001/S01 | M001/S06 | S01 verified: the app generates SVG QR codes server-side (lib/qr/generate.ts) encoding each fridge/freezer's full context URL. QR is rendered on the storage-context page and is print-ready. QR URL was confirmed to match the route contract via curl inspection. |
 | R003 | core-capability | active | M001/S02 | M001/S06 | mapped |
 | R004 | failure-visibility | active | M001/S02 | M001/S03, M001/S06 | mapped |
 | R005 | primary-user-loop | active | M001/S03 | M001/S04, M001/S05, M001/S06 | mapped |
@@ -293,7 +281,7 @@ None yet.
 
 ## Coverage Summary
 
-- Active requirements: 14
-- Mapped to slices: 13
-- Validated: 0
-- Unmapped active requirements: 1
+- Active requirements: 12
+- Mapped to slices: 12
+- Validated: 2 (R001, R002)
+- Unmapped active requirements: 0

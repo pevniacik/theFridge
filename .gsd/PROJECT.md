@@ -10,7 +10,7 @@ A household can reliably answer: what is actually in this fridge or freezer righ
 
 ## Current State
 
-Project planning is complete for M001. No product code has been built yet.
+S01 complete. The local web app is running with fridge/freezer identity records, printable QR code generation, and storage-context routing. The QR → context entry loop works end-to-end on localhost. S02 (photo intake with review-first draft) is next.
 
 ## Architecture / Key Patterns
 

@@ -64,3 +64,28 @@ export function getDb(): Database.Database {
   return _db;
 }
 ```
+
+## Inline not-found rendering is better than Next.js notFound() for contextual failure states
+
+**Context:** When a dynamic route receives an ID that doesn't exist in the DB, `notFound()` shows a generic 404. For theFridge storage-context pages, the failure state needs to show the bad ID in context and provide actionable links.
+
+**Pattern:** Render the failure card inline with a conditional check instead of calling `notFound()`. The HTTP status remains 200; detection is via body content.
+
+```tsx
+// lib/fridges/store.ts returns null for missing IDs
+const fridge = getFridgeById(fridgeId);
+if (!fridge) {
+  return <StorageNotFoundCard id={fridgeId} />;
+}
+```
+
+**Diagnostic implication:** When checking for invalid-ID handling, grep the body for "STORAGE NOT FOUND" rather than checking for HTTP 404 — the status will always be 200.
+
+## QR URL is baked at generation time — encodes the server address when created
+
+**Context:** `lib/qr/generate.ts` builds the storage-context URL from request headers (`x-forwarded-proto` + `host`) when the QR is rendered. This works correctly for both localhost and LAN IPs.
+
+**Gotcha:** The URL encoded in the QR SVG is fixed at generation time. If the server's LAN IP or port changes after QR codes are printed, the printed QR codes will point to a dead address. There is no auto-update mechanism.
+
+**Implication for S06:** During end-to-end home-network testing, confirm the stable LAN address first, then regenerate (reload the context page) to get a QR encoding the correct LAN URL before printing.
+
