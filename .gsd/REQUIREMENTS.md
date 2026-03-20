@@ -4,28 +4,6 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Active
 
-### R003 — A grocery photo can be uploaded from the web app and converted into a draft set of candidate items.
-- Class: core-capability
-- Status: active
-- Description: A grocery photo can be uploaded from the web app and converted into a draft set of candidate items.
-- Why it matters: Photo-assisted capture reduces household effort during intake.
-- Source: user
-- Primary owning slice: M001/S02
-- Supporting slices: M001/S06
-- Validation: mapped
-- Notes: The draft may be uncertain and must not silently become truth.
-
-### R004 — Drafted items can be reviewed and edited before being committed into live inventory.
-- Class: failure-visibility
-- Status: active
-- Description: Drafted items can be reviewed and edited before being committed into live inventory.
-- Why it matters: Trust depends on human confirmation when AI detection is incomplete or wrong.
-- Source: user
-- Primary owning slice: M001/S02
-- Supporting slices: M001/S03, M001/S06
-- Validation: mapped
-- Notes: This is especially important for names, storage placement, and expiry details.
-
 ### R005 — The system stores item-level inventory for each fridge/freezer rather than only broad categories.
 - Class: primary-user-loop
 - Status: active
@@ -125,17 +103,6 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: mapped
 - Notes: M001 can keep household access simple as long as the shared flow works.
 
-### R014 — The app surfaces uncertainty, bad scans, and review requirements rather than silently mutating inventory with wrong data.
-- Class: failure-visibility
-- Status: active
-- Description: The app surfaces uncertainty, bad scans, and review requirements rather than silently mutating inventory with wrong data.
-- Why it matters: Inventory trust depends on visible uncertainty and controllable correction.
-- Source: inferred
-- Primary owning slice: M001/S02
-- Supporting slices: M001/S04, M001/S06
-- Validation: mapped
-- Notes: The app should behave like a trusted assistant, not an invisible automation layer.
-
 ## Validated
 
 ### R001 — A person can scan a printable QR code attached to a fridge or freezer and enter that exact storage context in the local web app.
@@ -159,6 +126,39 @@ This file is the explicit capability and coverage contract for the project.
 - Supporting slices: M001/S06
 - Validation: S01 verified: the app generates SVG QR codes server-side (lib/qr/generate.ts) encoding each fridge/freezer's full context URL. QR is rendered on the storage-context page and is print-ready. QR URL was confirmed to match the route contract via curl inspection.
 - Notes: SVG output is printable without external image requests. LAN IP routing in QR URLs is handled via x-forwarded-proto + host headers; full home-network print verification deferred to S06.
+
+### R003 — A grocery photo can be uploaded from the web app and converted into a draft set of candidate items.
+- Class: core-capability
+- Status: validated
+- Description: A grocery photo can be uploaded from the web app and converted into a draft set of candidate items.
+- Why it matters: Photo-assisted capture reduces household effort during intake.
+- Source: user
+- Primary owning slice: M001/S02
+- Supporting slices: M001/S06
+- Validation: S02 verified: POST /api/intake/[fridgeId] accepts a photo upload and returns a structured JSON draft with named items, quantities, units, and confidence fields. Stub returns 3 items when OPENAI_API_KEY is absent; OpenAI gpt-4o-mini call is wired for when the key is present. curl test confirmed: 3 items returned for valid fridge + photo input.
+- Notes: The draft may be uncertain and must not silently become truth.
+
+### R004 — Drafted items can be reviewed and edited before being committed into live inventory.
+- Class: failure-visibility
+- Status: validated
+- Description: Drafted items can be reviewed and edited before being committed into live inventory.
+- Why it matters: Trust depends on human confirmation when AI detection is incomplete or wrong.
+- Source: user
+- Primary owning slice: M001/S02
+- Supporting slices: M001/S03, M001/S06
+- Validation: S02 verified: IntakeSection renders an editable review grid (name, quantity, unit inputs + delete button per row) before any item reaches intake_drafts. Confirm step is explicit and gated — no item is written to the DB without user action. Browser test: edited a name, deleted a row, confirmed — only the modified items were persisted.
+- Notes: This is especially important for names, storage placement, and expiry details.
+
+### R014 — The app surfaces uncertainty, bad scans, and review requirements rather than silently mutating inventory with wrong data.
+- Class: failure-visibility
+- Status: validated
+- Description: The app surfaces uncertainty, bad scans, and review requirements rather than silently mutating inventory with wrong data.
+- Why it matters: Inventory trust depends on visible uncertainty and controllable correction.
+- Source: inferred
+- Primary owning slice: M001/S02
+- Supporting slices: M001/S04, M001/S06
+- Validation: S02 verified: low-confidence draft items show an amber "?" badge in the review UI; API returns 404 for invalid fridge IDs and 400 for missing photos with descriptive JSON error messages; UI shows an error phase with the server error message on failure; extraction failures surface in server logs. No item reaches intake_drafts without passing through the review-and-confirm step.
+- Notes: The app should behave like a trusted assistant, not an invisible automation layer.
 
 ## Deferred
 
@@ -258,8 +258,8 @@ This file is the explicit capability and coverage contract for the project.
 |---|---|---|---|---|---|
 | R001 | primary-user-loop | validated | M001/S01 | M001/S06 | S01 verified: valid fridge IDs resolve the correct storage-context page at /fridges/[fridgeId]; the QR URL encodes the exact same route; opening the QR URL loads the correct context. All 7 slice checks pass. |
 | R002 | core-capability | validated | M001/S01 | M001/S06 | S01 verified: the app generates SVG QR codes server-side (lib/qr/generate.ts) encoding each fridge/freezer's full context URL. QR is rendered on the storage-context page and is print-ready. QR URL was confirmed to match the route contract via curl inspection. |
-| R003 | core-capability | active | M001/S02 | M001/S06 | mapped |
-| R004 | failure-visibility | active | M001/S02 | M001/S03, M001/S06 | mapped |
+| R003 | core-capability | validated | M001/S02 | M001/S06 | S02 verified: POST /api/intake/[fridgeId] accepts a photo upload and returns a structured JSON draft with named items, quantities, units, and confidence fields. Stub returns 3 items when OPENAI_API_KEY is absent; OpenAI gpt-4o-mini call is wired for when the key is present. curl test confirmed: 3 items returned for valid fridge + photo input. |
+| R004 | failure-visibility | validated | M001/S02 | M001/S03, M001/S06 | S02 verified: IntakeSection renders an editable review grid (name, quantity, unit inputs + delete button per row) before any item reaches intake_drafts. Confirm step is explicit and gated — no item is written to the DB without user action. Browser test: edited a name, deleted a row, confirmed — only the modified items were persisted. |
 | R005 | primary-user-loop | active | M001/S03 | M001/S04, M001/S05, M001/S06 | mapped |
 | R006 | core-capability | active | M001/S03 | M001/S05, M001/S06 | mapped |
 | R007 | continuity | active | M001/S04 | M001/S06 | mapped |
@@ -269,7 +269,7 @@ This file is the explicit capability and coverage contract for the project.
 | R011 | constraint | active | M001/S06 | M001/S01 | mapped |
 | R012 | launchability | active | M002 | none | unmapped |
 | R013 | primary-user-loop | active | M001/S04 | M001/S06 | mapped |
-| R014 | failure-visibility | active | M001/S02 | M001/S04, M001/S06 | mapped |
+| R014 | failure-visibility | validated | M001/S02 | M001/S04, M001/S06 | S02 verified: low-confidence draft items show an amber "?" badge in the review UI; API returns 404 for invalid fridge IDs and 400 for missing photos with descriptive JSON error messages; UI shows an error phase with the server error message on failure; extraction failures surface in server logs. No item reaches intake_drafts without passing through the review-and-confirm step. |
 | R015 | quality-attribute | deferred | none | none | unmapped |
 | R016 | differentiator | deferred | none | none | unmapped |
 | R017 | admin/support | deferred | M002 | none | unmapped |
@@ -281,7 +281,7 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Coverage Summary
 
-- Active requirements: 12
-- Mapped to slices: 12
-- Validated: 2 (R001, R002)
+- Active requirements: 9
+- Mapped to slices: 9
+- Validated: 5 (R001, R002, R003, R004, R014)
 - Unmapped active requirements: 0

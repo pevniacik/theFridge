@@ -10,7 +10,7 @@ A household can reliably answer: what is actually in this fridge or freezer righ
 
 ## Current State
 
-S01 complete. The local web app is running with fridge/freezer identity records, printable QR code generation, and storage-context routing. The QR → context entry loop works end-to-end on localhost. S02 (photo intake with review-first draft) is next.
+S01 and S02 complete. The local web app runs with fridge/freezer identity records, printable QR code generation, and storage-context routing (S01). Photo intake is fully wired: a user can upload a grocery photo, review and correct AI-extracted draft items in an editable review UI, and confirm them into the `intake_drafts` DB table (S02). The QR → context entry → photo intake → draft review → confirm loop works end-to-end on localhost. S03 (inventory truth and expiry model) is next — it will consume confirmed `intake_drafts` rows and promote them into a persistent item-level inventory.
 
 ## Architecture / Key Patterns
 

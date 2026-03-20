@@ -56,7 +56,7 @@ This milestone is complete only when all are true:
 - [x] **S01: QR identity and local fridge entry** `risk:medium` `depends:[]`
   > After this: You can create a printable QR code for a fridge/freezer, scan it, and enter the correct storage context in the local web app.
 
-- [ ] **S02: Photo intake with review-first draft** `risk:high` `depends:[S01]`
+- [x] **S02: Photo intake with review-first draft** `risk:high` `depends:[S01]`
   > After this: From a storage context, you can upload a grocery photo and get a draft list to review and correct before saving.
 
 - [ ] **S03: Inventory truth and expiry model** `risk:high` `depends:[S02]`

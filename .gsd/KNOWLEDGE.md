@@ -122,4 +122,36 @@ if (!file || !(file instanceof File)) {
 
 **Gotcha:** Next.js logs "Port 3000 is in use by an unknown process, using available port 3001 instead." but still starts successfully. `bg_shell wait_for_ready` detects readiness on the wrong port check if you only probe 3000. Always use `bg_shell highlights` to read the actual "Local: http://localhost:XXXX" line before navigating in the browser.
 
+## Server Actions should return structured results, never throw across the RSC boundary
+
+**Context:** Next.js 15 + React 19 Server Actions called imperatively from client components.
+
+**Pattern:** Server Actions that are called from client component event handlers (not form submissions) should return a typed result object — `{ success: true, count: N }` or `{ success: false, error: "..." }` — and wrap their body in try/catch. Throwing an unhandled error across the RSC boundary produces a generic error in the client that is hard to surface meaningfully in the UI.
+
+```ts
+// ✅ correct
+export async function confirmDraftAction(fridgeId: string, items: DraftItem[]) {
+  try {
+    saveDraftItems(fridgeId, items);
+    return { success: true as const, count: items.length };
+  } catch (err) {
+    return { success: false as const, error: err instanceof Error ? err.message : "Unknown error" };
+  }
+}
+```
+
+## Phase enum pattern for multi-step client flows
+
+**Context:** Client components with more than 2 UI states (idle/loading/done) quickly become hard to reason about with boolean flags.
+
+**Pattern:** Define an explicit string union type for the phase and use one branch per phase in the render. This is more readable than nested boolean conditions and makes impossible state combinations unrepresentable.
+
+```ts
+type Phase = "idle" | "uploading" | "review" | "confirming" | "done" | "error";
+const [phase, setPhase] = useState<Phase>("idle");
+// render: if (phase === "idle") return <IdleUI />; etc.
+```
+
+**Benefit:** Adding or removing a phase requires only adding/removing one branch and one state transition — no boolean flag interactions to audit.
+
 
