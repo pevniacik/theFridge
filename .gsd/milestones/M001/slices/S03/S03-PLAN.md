@@ -48,7 +48,7 @@
 
 ## Tasks
 
-- [ ] **T01: Add inventory data layer with expiry schema and promotion logic** `est:30m`
+- [x] **T01: Add inventory data layer with expiry schema and promotion logic** `est:30m`
   - Why: Establishes the persistent inventory model, expiry fields, and the atomic draft-to-inventory promotion — the data foundation that R005 and R006 depend on. Without this, there's no inventory table and no way to move confirmed drafts into real inventory.
   - Files: `lib/db/client.ts`, `lib/inventory/types.ts`, `lib/inventory/store.ts`, `app/fridges/[fridgeId]/actions.ts`
   - Do: Add `inventory_items` CREATE TABLE migration to `getDb()`. Create `lib/inventory/types.ts` with `InventoryItem` and `InventoryItemInput` interfaces. Create `lib/inventory/store.ts` with `listPendingDrafts`, `promoteToInventory` (transactional: INSERT inventory rows + UPDATE intake_drafts SET status='confirmed'), and `listInventoryItems`. Add `promoteToInventoryAction` Server Action to `actions.ts`. All store functions synchronous. Follow existing module patterns exactly.

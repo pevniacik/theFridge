@@ -50,5 +50,23 @@ export function getDb(): Database.Database {
     );
   `);
 
+  _db.exec(`
+    CREATE TABLE IF NOT EXISTS inventory_items (
+      id               TEXT PRIMARY KEY,
+      fridge_id        TEXT NOT NULL REFERENCES fridges(id),
+      draft_id         TEXT REFERENCES intake_drafts(id),
+      name             TEXT NOT NULL,
+      quantity         TEXT NOT NULL DEFAULT '',
+      unit             TEXT NOT NULL DEFAULT '',
+      confidence       TEXT NOT NULL DEFAULT 'high',
+      expiry_date      TEXT,
+      expiry_estimated INTEGER NOT NULL DEFAULT 0,
+      status           TEXT NOT NULL DEFAULT 'active'
+                       CHECK (status IN ('active', 'used', 'discarded')),
+      added_at         TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at       TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+  `);
+
   return _db;
 }

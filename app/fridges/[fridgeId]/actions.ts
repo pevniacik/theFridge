@@ -7,6 +7,8 @@
 
 import { saveDraftItems } from "@/lib/intake/store";
 import type { DraftItem } from "@/lib/intake/types";
+import { promoteToInventory } from "@/lib/inventory/store";
+import type { InventoryItemInput } from "@/lib/inventory/types";
 
 /**
  * Persist a reviewed draft batch to intake_drafts.
@@ -38,6 +40,34 @@ export async function confirmDraftAction(
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error(`[intake] confirmDraftAction failed for fridge ${fridgeId}: ${message}`);
+    return { success: false, count: 0, error: message };
+  }
+}
+
+/**
+ * Atomically promote pending draft items to inventory_items and mark the
+ * source drafts as 'confirmed'.
+ *
+ * Called from the InventorySection client component after the user reviews
+ * pending drafts and optionally sets expiry dates.
+ *
+ * @returns { success, count } on success; { success: false, count: 0, error } on failure.
+ */
+export async function promoteToInventoryAction(
+  fridgeId: string,
+  items: InventoryItemInput[]
+): Promise<{ success: boolean; count: number; error?: string }> {
+  if (items.length === 0) {
+    return { success: false, count: 0, error: "No items to promote." };
+  }
+
+  try {
+    promoteToInventory(fridgeId, items);
+    console.log(`[inventory] Promoted ${items.length} items to inventory for fridge ${fridgeId}`);
+    return { success: true, count: items.length };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error(`[inventory] promoteToInventoryAction failed for fridge ${fridgeId}: ${message}`);
     return { success: false, count: 0, error: message };
   }
 }
