@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+@theme {
+  --color-surface: #0f1011;
+  --color-panel: #18191c;
+  --color-border: #2a2b2e;
+  --color-muted: #6b6e77;
+  --color-text: #e8e9eb;
+  --color-accent: #f59c2b;
+  --color-accent-dim: #7a4e15;
+  --color-cold: #7ec8e3;
+  --color-cold-dim: #1e4a57;
+
+  --font-display: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+  --font-body: "DM Sans", "Helvetica Neue", sans-serif;
+
+  --radius-card: 0.375rem;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Monospaced display labels */
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
