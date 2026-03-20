@@ -81,6 +81,25 @@ if (!fridge) {
 
 **Diagnostic implication:** When checking for invalid-ID handling, grep the body for "STORAGE NOT FOUND" rather than checking for HTTP 404 — the status will always be 200.
 
+## Next.js App Router: request.formData() throws on empty/missing body — catch it
+
+**Context:** POST route handlers that accept multipart uploads.
+
+**Gotcha:** When a client POSTs without any body or with a non-multipart Content-Type, calling `await request.formData()` throws a TypeError (e.g. "Failed to parse body as FormData"). The check `formData.get("photo") instanceof File` never runs. Wrap `formData()` in try/catch and return a 400 error from the catch block.
+
+```ts
+let formData: FormData;
+try {
+  formData = await request.formData();
+} catch {
+  return NextResponse.json({ error: "Invalid form data" }, { status: 400 });
+}
+const file = formData.get("photo");
+if (!file || !(file instanceof File)) {
+  return NextResponse.json({ error: "No photo provided" }, { status: 400 });
+}
+```
+
 ## QR URL is baked at generation time — encodes the server address when created
 
 **Context:** `lib/qr/generate.ts` builds the storage-context URL from request headers (`x-forwarded-proto` + `host`) when the QR is rendered. This works correctly for both localhost and LAN IPs.

@@ -36,5 +36,19 @@ export function getDb(): Database.Database {
     );
   `);
 
+  _db.exec(`
+    CREATE TABLE IF NOT EXISTS intake_drafts (
+      id          TEXT PRIMARY KEY,
+      fridge_id   TEXT NOT NULL REFERENCES fridges(id),
+      name        TEXT NOT NULL,
+      quantity    TEXT NOT NULL DEFAULT '',
+      unit        TEXT NOT NULL DEFAULT '',
+      confidence  TEXT NOT NULL DEFAULT 'high',
+      status      TEXT NOT NULL DEFAULT 'pending'
+                 CHECK (status IN ('pending', 'confirmed', 'rejected')),
+      created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+  `);
+
   return _db;
 }

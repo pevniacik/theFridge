@@ -47,7 +47,7 @@
 
 ## Tasks
 
-- [ ] **T01: Build extraction pipeline, route handler, and intake data layer** `est:45m`
+- [x] **T01: Build extraction pipeline, route handler, and intake data layer** `est:45m`
   - Why: Creates the complete backend for photo intake — DB table, AI extraction with stub fallback, persistence, and HTTP endpoint. Everything the review UI needs to function.
   - Files: `lib/db/client.ts`, `lib/intake/types.ts`, `lib/intake/extract.ts`, `lib/intake/store.ts`, `app/api/intake/[fridgeId]/route.ts`, `package.json`
   - Do: Add `intake_drafts` CREATE TABLE to `lib/db/client.ts` migration block. Define `DraftItem` interface in `lib/intake/types.ts`. Implement `extractDraftFromImage` in `lib/intake/extract.ts` with OpenAI gpt-4o-mini call and deterministic stub fallback when no API key. Implement `saveDraftItems` in `lib/intake/store.ts` (synchronous, validates fridge exists). Build POST route handler that reads FormData file, base64-encodes, calls extract, returns JSON. Install `openai` npm package. Validate fridge existence before extraction (404 if missing). Return structured JSON errors for missing photo (400) and parse failures.
