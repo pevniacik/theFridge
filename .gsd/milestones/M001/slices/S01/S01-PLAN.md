@@ -16,7 +16,7 @@
 - [x] **T01: Create the local web app foundation**
   Set up the local-first web app skeleton, routing structure, and initial page shell for storage-context flows.
 
-- [ ] **T02: Implement fridge/freezer identity records and QR generation**
+- [x] **T02: Implement fridge/freezer identity records and QR generation**
   Add the storage-context model and the app flow to create a fridge/freezer and render its printable QR code.
 
 - [ ] **T03: Wire QR entry into storage-context resolution**
