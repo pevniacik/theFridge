@@ -19,7 +19,7 @@
 - [x] **T02: Implement fridge/freezer identity records and QR generation**
   Add the storage-context model and the app flow to create a fridge/freezer and render its printable QR code.
 
-- [ ] **T03: Wire QR entry into storage-context resolution**
+- [x] **T03: Wire QR entry into storage-context resolution**
   Implement the route or entrypoint that resolves a QR target into the correct fridge/freezer context, including invalid-ID handling and verification.
 
 ## Files Likely Touched
@@ -80,4 +80,11 @@ npx tsc --noEmit
 
 # 5. Database tables exist after first boot (diagnostic failure path check)
 sqlite3 data/fridges.db ".tables" 2>/dev/null | grep -c "fridge" || echo "db-not-created-yet"
+
+# 6. Invalid ID renders failure state (not a blank page or uncaught exception)
+curl -s http://localhost:3000/fridges/does-not-exist | grep -c "not found\|STORAGE NOT FOUND"
+
+# 7. Valid fridge ID renders identity card with fridge name
+FRIDGE_ID=$(sqlite3 data/fridges.db "SELECT id FROM fridges LIMIT 1;" 2>/dev/null) && \
+  [ -n "$FRIDGE_ID" ] && curl -s "http://localhost:3000/fridges/$FRIDGE_ID" | grep -c "storage context\|STORAGE CONTEXT" || echo "no-fridge-records-yet"
 ```
