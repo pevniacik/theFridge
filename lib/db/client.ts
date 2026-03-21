@@ -69,6 +69,15 @@ export function getDb(): Database.Database {
     );
   `);
 
+  _db.exec(`
+    CREATE TABLE IF NOT EXISTS llm_providers (
+      provider   TEXT PRIMARY KEY,
+      api_key    TEXT NOT NULL DEFAULT '',
+      model      TEXT NOT NULL DEFAULT '',
+      is_active  INTEGER NOT NULL DEFAULT 0
+    );
+  `);
+
   runMigrations(_db);
 
   return _db;

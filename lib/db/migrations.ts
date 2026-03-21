@@ -43,5 +43,10 @@ export function addColumnIfNotExists(
  * @param db - better-sqlite3 Database instance
  */
 export function runMigrations(db: Database.Database): void {
-  // Migrations will be added in T4
+  // Add category to intake_drafts
+  addColumnIfNotExists(db, "intake_drafts", "category", "TEXT NOT NULL DEFAULT ''");
+  // Add category to inventory_items
+  addColumnIfNotExists(db, "inventory_items", "category", "TEXT NOT NULL DEFAULT ''");
+  // Add purchase_date to inventory_items
+  addColumnIfNotExists(db, "inventory_items", "purchase_date", "TEXT");
 }
