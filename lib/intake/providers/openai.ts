@@ -1,9 +1,9 @@
 import OpenAI from "openai";
 import { nanoid } from "nanoid";
 
-import type { DraftItem } from "@/lib/intake/types";
+import type { DraftItem, IntakeSource } from "@/lib/intake/types";
 
-import { EXTRACTION_PROMPT } from "./constants";
+import { getExtractionPrompt } from "./constants";
 import type { ExtractionProvider } from "./types";
 
 export class OpenAIProvider implements ExtractionProvider {
@@ -14,8 +14,14 @@ export class OpenAIProvider implements ExtractionProvider {
     private readonly model: string
   ) {}
 
-  async extract(base64: string, mimeType: string): Promise<DraftItem[]> {
+  async extract(
+    base64: string,
+    mimeType: string,
+    source: IntakeSource = "photo"
+  ): Promise<DraftItem[]> {
     console.log(`[intake] Calling OpenAI ${this.model} for extraction`);
+
+    const extractionPrompt = getExtractionPrompt(source);
 
     const client = new OpenAI({ apiKey: this.apiKey });
 
@@ -27,7 +33,7 @@ export class OpenAIProvider implements ExtractionProvider {
           {
             role: "user",
             content: [
-              { type: "text", text: EXTRACTION_PROMPT },
+              { type: "text", text: extractionPrompt },
               {
                 type: "image_url",
                 image_url: {

@@ -1,14 +1,50 @@
 import { nanoid } from "nanoid";
 
-import type { DraftItem } from "@/lib/intake/types";
+import type { DraftItem, IntakeSource } from "@/lib/intake/types";
 
 import type { ExtractionProvider } from "./types";
 
 export class StubProvider implements ExtractionProvider {
   readonly providerName = "stub";
 
-  async extract(_base64: string, _mimeType: string): Promise<DraftItem[]> {
+  async extract(
+    _base64: string,
+    _mimeType: string,
+    source: IntakeSource = "photo"
+  ): Promise<DraftItem[]> {
     console.log("[intake] Using stub extraction");
+
+    if (source === "receipt") {
+      return [
+        {
+          id: nanoid(10),
+          name: "Chicken Breast",
+          quantity: "1",
+          unit: "pack",
+          category: "Meat",
+          confidence: "high",
+          estimated_expiry_days: 3,
+        },
+        {
+          id: nanoid(10),
+          name: "Apples",
+          quantity: "6",
+          unit: "pcs",
+          category: "Produce",
+          confidence: "high",
+          estimated_expiry_days: 10,
+        },
+        {
+          id: nanoid(10),
+          name: "Greek Yogurt",
+          quantity: "2",
+          unit: "cups",
+          category: "Dairy",
+          confidence: "high",
+          estimated_expiry_days: 14,
+        },
+      ];
+    }
 
     return [
       {

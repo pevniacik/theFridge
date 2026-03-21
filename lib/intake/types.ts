@@ -13,3 +13,5 @@ export interface DraftItem {
   confidence: "high" | "low";
   estimated_expiry_days: number | null;
 }
+
+export type IntakeSource = "photo" | "receipt";

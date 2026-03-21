@@ -1,4 +1,4 @@
-import type { DraftItem } from "@/lib/intake/types";
+import type { DraftItem, IntakeSource } from "@/lib/intake/types";
 import type { LlmProviderConfig } from "@/lib/settings/types";
 
 import { createProvider } from "@/lib/intake/providers/factory";
@@ -14,8 +14,9 @@ export { EXTRACTION_PROMPT } from "@/lib/intake/providers/constants";
 export async function extractDraftFromImage(
   base64: string,
   mimeType: string,
-  config?: LlmProviderConfig | null
+  config?: LlmProviderConfig | null,
+  source: IntakeSource = "photo"
 ): Promise<DraftItem[]> {
   const provider = createProvider(config ?? null);
-  return provider.extract(base64, mimeType);
+  return provider.extract(base64, mimeType, source);
 }

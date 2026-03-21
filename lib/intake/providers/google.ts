@@ -1,9 +1,9 @@
 import { GoogleGenAI } from "@google/genai";
 import { nanoid } from "nanoid";
 
-import type { DraftItem } from "@/lib/intake/types";
+import type { DraftItem, IntakeSource } from "@/lib/intake/types";
 
-import { EXTRACTION_PROMPT } from "./constants";
+import { getExtractionPrompt } from "./constants";
 import type { ExtractionProvider } from "./types";
 
 export class GoogleProvider implements ExtractionProvider {
@@ -14,8 +14,14 @@ export class GoogleProvider implements ExtractionProvider {
     private readonly model: string
   ) {}
 
-  async extract(base64: string, mimeType: string): Promise<DraftItem[]> {
+  async extract(
+    base64: string,
+    mimeType: string,
+    source: IntakeSource = "photo"
+  ): Promise<DraftItem[]> {
     console.log(`[intake] Calling Google ${this.model} for extraction`);
+
+    const extractionPrompt = getExtractionPrompt(source);
 
     const ai = new GoogleGenAI({ apiKey: this.apiKey });
 
@@ -25,7 +31,7 @@ export class GoogleProvider implements ExtractionProvider {
         contents: [
           {
             parts: [
-              { text: EXTRACTION_PROMPT },
+              { text: extractionPrompt },
               { inlineData: { mimeType, data: base64 } },
             ],
           },
