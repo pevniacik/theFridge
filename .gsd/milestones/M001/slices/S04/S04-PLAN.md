@@ -51,7 +51,7 @@
   - Verify: `npx tsc --noEmit` exits 0; grep for `fridge_id = ?` AND `id = ?` in store queries confirms scoping
   - Done when: Three new exports from store.ts and two new Server Actions compile without error and follow the established pattern
 
-- [ ] **T02: Wire edit, use, and discard controls into InventorySection** `est:45m`
+- [x] **T02: Wire edit, use, and discard controls into InventorySection** `est:45m`
   - Why: The UI must let household members act on individual items so the inventory stays truthful (R007, R008, R013). This is the user-facing proof of the slice.
   - Files: `app/fridges/[fridgeId]/InventorySection.tsx`
   - Do: Extend each inventory row with: (1) an "Edit" button that reveals inline editable fields for name, quantity, unit, and expiry; (2) a "Save" button that calls `updateInventoryItemAction` then `router.refresh()`; (3) "Used" and "Discard" buttons that call `setInventoryItemStatusAction` then `router.refresh()`. Use per-row state (`editingItemId` or similar) so only one row is in edit mode at a time. Show per-row error banners on failure. Match existing styling patterns. Skills: `react-best-practices`.

@@ -190,3 +190,12 @@ useEffect(() => {
 **Pattern for S04+:** When a household member marks food as eaten, used, or discarded, update `status` to `'used'` or `'discarded'` rather than deleting the row. `listInventoryItems` already filters `WHERE status = 'active'`, so old items disappear from the UI automatically. This preserves history and keeps the schema consistent with its own CHECK constraint intent.
 
 
+
+## Playwright fill vs React controlled inputs (S04/T02)
+
+**Problem:** `browser_fill_ref` / `browser_type` with `clearFirst: true` uses Playwright's `fill()` which sets the DOM input value directly. React controlled inputs (using `value={state}` + `onChange`) DO NOT update their backing state when Playwright fills the input, because `fill()` doesn't dispatch a React synthetic `onChange` event. The DOM shows the new value but React state remains unchanged — so any handler that reads from React state (e.g., `handleSave` reading `editDraft`) will use the old value.
+
+**Fix:** Use `browser_fill_ref` with `slowly: true` (character-by-character) to trigger `onChange` per keystroke, OR interact with the UI as a real user would (the component's own `onChange` handler updates state correctly in production).
+
+**Gotcha for agents:** Never trust a "value was set" assertion from `browser_fill_ref` on a React controlled input as proof that the component's state was updated — it only proves the DOM value changed.
+
