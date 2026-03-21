@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Link from "next/link";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -81,6 +82,25 @@ export default function RootLayout({
             >
               local inventory
             </span>
+            <div style={{ marginLeft: "auto" }}>
+              <Link
+                href="/settings"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.375rem",
+                  fontSize: "0.8125rem",
+                  color: "var(--color-muted)",
+                  textDecoration: "none",
+                  padding: "0.25rem 0.5rem",
+                  borderRadius: "var(--radius-input, 0.375rem)",
+                  minHeight: "44px",
+                }}
+              >
+                <span style={{ fontSize: "1rem" }}>⚙️</span>
+                <span style={{ fontFamily: "var(--font-display)" }}>Settings</span>
+              </Link>
+            </div>
           </header>
           <main className="flex-1">{children}</main>
         </div>
