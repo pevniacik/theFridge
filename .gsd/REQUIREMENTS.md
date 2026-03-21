@@ -4,39 +4,6 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Active
 
-### R006 — The system stores explicit expiry dates when known and allows estimated expiry when the food has no printed producer date.
-- Class: core-capability
-- Status: validated
-- Description: The system stores explicit expiry dates when known and allows estimated expiry when the food has no printed producer date.
-- Why it matters: Produce and similar items still need aging awareness even without package dates.
-- Source: user
-- Primary owning slice: M001/S03
-- Supporting slices: M001/S05, M001/S06
-- Validation: S03 verified: inventory_items schema includes expiry_date (TEXT nullable) and expiry_estimated (INTEGER 0/1). Quick-pick day buttons (3d/7d/14d/30d) set expiry_estimated=1; explicit date input sets expiry_estimated=0; blank expiry is valid (null). DB confirmed: promoted row via 7d quick-pick shows expiry_date='2026-03-28', expiry_estimated=1; row with no date shows expiry_date=null, expiry_estimated=0. Amber 'est.' badge renders in the inventory list for estimated entries.
-- Notes: User-provided estimation is part of the intended experience.
-
-### R007 — After cooking, eating, moving, or throwing food away, household members can update the inventory so it stays truthful.
-- Class: continuity
-- Status: active
-- Description: After cooking, eating, moving, or throwing food away, household members can update the inventory so it stays truthful.
-- Why it matters: Intake alone is not enough; stale inventory breaks trust.
-- Source: user
-- Primary owning slice: M001/S04
-- Supporting slices: M001/S06
-- Validation: mapped
-- Notes: Version 1 favors explicit actions over inference.
-
-### R008 — The app can show the current item-level state of a selected fridge/freezer on demand.
-- Class: primary-user-loop
-- Status: active
-- Description: The app can show the current item-level state of a selected fridge/freezer on demand.
-- Why it matters: This is the core payoff of maintaining the system.
-- Source: user
-- Primary owning slice: M001/S04
-- Supporting slices: M001/S05, M001/S06
-- Validation: mapped
-- Notes: Trustworthiness matters more than decorative presentation.
-
 ### R009 — The app highlights items that are aging, nearing expiry, or effectively forgotten in storage.
 - Class: launchability
 - Status: active
@@ -80,17 +47,6 @@ This file is the explicit capability and coverage contract for the project.
 - Supporting slices: none
 - Validation: unmapped
 - Notes: This is not part of M001 implementation.
-
-### R013 — More than one person in a household can use the system against the same fridge/freezer inventory.
-- Class: primary-user-loop
-- Status: active
-- Description: More than one person in a household can use the system against the same fridge/freezer inventory.
-- Why it matters: The inventory must reflect shared real-world use.
-- Source: user
-- Primary owning slice: M001/S04
-- Supporting slices: M001/S06
-- Validation: mapped
-- Notes: M001 can keep household access simple as long as the shared flow works.
 
 ## Validated
 
@@ -148,6 +104,50 @@ This file is the explicit capability and coverage contract for the project.
 - Supporting slices: M001/S04, M001/S05, M001/S06
 - Validation: S03 verified: inventory_items table persists item-level records scoped to each fridge via FK. After uploading a grocery photo, confirming the draft, and promoting via InventorySection, sqlite3 confirms individual named rows (Greek Yogurt, Butter) with correct fridge_id. listInventoryItems returns the active set per fridge. Browser renders the inventory list with name/quantity/unit per item.
 - Notes: Version 1 can be presence-first rather than exact-unit heavy.
+
+### R006 — The system stores explicit expiry dates when known and allows estimated expiry when the food has no printed producer date.
+- Class: core-capability
+- Status: validated
+- Description: The system stores explicit expiry dates when known and allows estimated expiry when the food has no printed producer date.
+- Why it matters: Produce and similar items still need aging awareness even without package dates.
+- Source: user
+- Primary owning slice: M001/S03
+- Supporting slices: M001/S05, M001/S06
+- Validation: S03 verified: inventory_items schema includes expiry_date (TEXT nullable) and expiry_estimated (INTEGER 0/1). Quick-pick day buttons (3d/7d/14d/30d) set expiry_estimated=1; explicit date input sets expiry_estimated=0; blank expiry is valid (null). DB confirmed: promoted row via 7d quick-pick shows expiry_date='2026-03-28', expiry_estimated=1; row with no date shows expiry_date=null, expiry_estimated=0. Amber 'est.' badge renders in the inventory list for estimated entries.
+- Notes: User-provided estimation is part of the intended experience.
+
+### R007 — After cooking, eating, moving, or throwing food away, household members can update the inventory so it stays truthful.
+- Class: continuity
+- Status: validated
+- Description: After cooking, eating, moving, or throwing food away, household members can update the inventory so it stays truthful.
+- Why it matters: Intake alone is not enough; stale inventory breaks trust.
+- Source: user
+- Primary owning slice: M001/S04
+- Supporting slices: M001/S06
+- Validation: S04 verified: updateInventoryItem store function UPDATEs name/quantity/unit/expiry_date/expiry_estimated scoped by id AND fridge_id, setting updated_at=datetime('now'). setInventoryItemStatus flips status to 'used' or 'discarded' with the same dual-key scoping. Browser test on Kitchen Fridge (ZPPo56GIYQ): edited "Greek Yogurt" → name persisted in DB with fresh updated_at; marked "Butter" used → status='used' in DB; marked item discarded → status='discarded' in DB. No rows are DELETEd — full audit trail preserved. Server Action error path returns { success: false, error: '...' } rendered as a per-row red banner. [inventory] log lines confirmed in server console for all mutation types.
+- Notes: Version 1 favors explicit actions over inference.
+
+### R008 — The app can show the current item-level state of a selected fridge/freezer on demand.
+- Class: primary-user-loop
+- Status: validated
+- Description: The app can show the current item-level state of a selected fridge/freezer on demand.
+- Why it matters: This is the core payoff of maintaining the system.
+- Source: user
+- Primary owning slice: M001/S04
+- Supporting slices: M001/S05, M001/S06
+- Validation: S04 verified: After each mutation (edit save, mark used, mark discarded), router.refresh() wrapped in startTransition() re-reads server truth from SQLite. The active inventory list reflects only status='active' rows — used/discarded items disappear immediately after the status flip. DB and UI are consistent: sqlite3 query confirms status change, browser confirms count decrease. listInventoryItems WHERE status='active' remains the authoritative read model.
+- Notes: Trustworthiness matters more than decorative presentation.
+
+### R013 — More than one person in a household can use the system against the same fridge/freezer inventory.
+- Class: primary-user-loop
+- Status: validated
+- Description: More than one person in a household can use the system against the same fridge/freezer inventory.
+- Why it matters: The inventory must reflect shared real-world use.
+- Source: user
+- Primary owning slice: M001/S04
+- Supporting slices: M001/S06
+- Validation: S04 verified: All mutations are scoped exclusively by item.id AND fridge_id — cross-fridge writes are structurally impossible (WHERE id=? AND fridge_id=?). setInventoryItemStatus guards on status='active' so double-acting on an item is a no-op that surfaces as an error, not silent corruption. The stateless server/SQLite model means any household member hitting the same local URL sees and mutates the same shared ground truth without session conflicts.
+- Notes: M001 can keep household access simple as long as the shared flow works.
 
 ### R014 — The app surfaces uncertainty, bad scans, and review requirements rather than silently mutating inventory with wrong data.
 - Class: failure-visibility
@@ -262,13 +262,13 @@ This file is the explicit capability and coverage contract for the project.
 | R004 | failure-visibility | validated | M001/S02 | M001/S03, M001/S06 | S02 verified: IntakeSection renders an editable review grid (name, quantity, unit inputs + delete button per row) before any item reaches intake_drafts. Confirm step is explicit and gated — no item is written to the DB without user action. Browser test: edited a name, deleted a row, confirmed — only the modified items were persisted. |
 | R005 | primary-user-loop | validated | M001/S03 | M001/S04, M001/S05, M001/S06 | S03 verified: inventory_items table persists item-level records scoped to each fridge via FK. After uploading a grocery photo, confirming the draft, and promoting via InventorySection, sqlite3 confirms individual named rows (Greek Yogurt, Butter) with correct fridge_id. listInventoryItems returns the active set per fridge. Browser renders the inventory list with name/quantity/unit per item. |
 | R006 | core-capability | validated | M001/S03 | M001/S05, M001/S06 | S03 verified: inventory_items schema includes expiry_date (TEXT nullable) and expiry_estimated (INTEGER 0/1). Quick-pick day buttons (3d/7d/14d/30d) set expiry_estimated=1; explicit date input sets expiry_estimated=0; blank expiry is valid (null). DB confirmed: promoted row via 7d quick-pick shows expiry_date='2026-03-28', expiry_estimated=1; row with no date shows expiry_date=null, expiry_estimated=0. Amber 'est.' badge renders in the inventory list for estimated entries. |
-| R007 | continuity | active | M001/S04 | M001/S06 | mapped |
-| R008 | primary-user-loop | active | M001/S04 | M001/S05, M001/S06 | mapped |
+| R007 | continuity | validated | M001/S04 | M001/S06 | S04 verified: updateInventoryItem store function UPDATEs name/quantity/unit/expiry_date/expiry_estimated scoped by id AND fridge_id, setting updated_at=datetime('now'). setInventoryItemStatus flips status to 'used' or 'discarded' with the same dual-key scoping. Browser test on Kitchen Fridge (ZPPo56GIYQ): edited "Greek Yogurt" → name persisted in DB with fresh updated_at; marked "Butter" used → status='used' in DB; marked item discarded → status='discarded' in DB. No rows are DELETEd — full audit trail preserved. Server Action error path returns { success: false, error: '...' } rendered as a per-row red banner. [inventory] log lines confirmed in server console for all mutation types. |
+| R008 | primary-user-loop | validated | M001/S04 | M001/S05, M001/S06 | S04 verified: After each mutation (edit save, mark used, mark discarded), router.refresh() wrapped in startTransition() re-reads server truth from SQLite. The active inventory list reflects only status='active' rows — used/discarded items disappear immediately after the status flip. DB and UI are consistent: sqlite3 query confirms status change, browser confirms count decrease. listInventoryItems WHERE status='active' remains the authoritative read model. |
 | R009 | launchability | active | M001/S05 | M001/S03, M001/S04, M001/S06 | mapped |
 | R010 | differentiator | active | M001/S05 | M001/S06 | mapped |
 | R011 | constraint | active | M001/S06 | M001/S01 | mapped |
 | R012 | launchability | active | M002 | none | unmapped |
-| R013 | primary-user-loop | active | M001/S04 | M001/S06 | mapped |
+| R013 | primary-user-loop | validated | M001/S04 | M001/S06 | S04 verified: All mutations are scoped exclusively by item.id AND fridge_id — cross-fridge writes are structurally impossible (WHERE id=? AND fridge_id=?). setInventoryItemStatus guards on status='active' so double-acting on an item is a no-op that surfaces as an error, not silent corruption. The stateless server/SQLite model means any household member hitting the same local URL sees and mutates the same shared ground truth without session conflicts. |
 | R014 | failure-visibility | validated | M001/S02 | M001/S04, M001/S06 | S02 verified: low-confidence draft items show an amber "?" badge in the review UI; API returns 404 for invalid fridge IDs and 400 for missing photos with descriptive JSON error messages; UI shows an error phase with the server error message on failure; extraction failures surface in server logs. No item reaches intake_drafts without passing through the review-and-confirm step. |
 | R015 | quality-attribute | deferred | none | none | unmapped |
 | R016 | differentiator | deferred | none | none | unmapped |
@@ -281,7 +281,7 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Coverage Summary
 
-- Active requirements: 7
-- Mapped to slices: 7
-- Validated: 7 (R001, R002, R003, R004, R005, R006, R014)
+- Active requirements: 4
+- Mapped to slices: 4
+- Validated: 10 (R001, R002, R003, R004, R005, R006, R007, R008, R013, R014)
 - Unmapped active requirements: 0

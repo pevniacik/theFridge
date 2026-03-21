@@ -62,7 +62,7 @@ This milestone is complete only when all are true:
 - [x] **S03: Inventory truth and expiry model** `risk:high` `depends:[S02]`
   > After this: Confirmed items become item-level inventory in the selected fridge/freezer with expiry or estimated expiry recorded.
 
-- [ ] **S04: Shared household inventory maintenance** `risk:high` `depends:[S03]`
+- [x] **S04: Shared household inventory maintenance** `risk:high` `depends:[S03]`
   > After this: Household members can update, remove, or discard items and the current fridge/freezer status stays trustworthy.
 
 - [ ] **S05: Status, alerts, and cooking suggestions** `risk:medium` `depends:[S04]`
