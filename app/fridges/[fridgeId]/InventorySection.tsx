@@ -52,13 +52,32 @@ interface Props {
   fridgeId: string;
   pendingDrafts: DraftItem[];
   inventoryItems: InventoryItem[];
+  storageType: "fridge" | "freezer";
+}
+
+function createInitialExpiryEntry(draft: DraftItem): ExpiryEntry {
+  if (typeof draft.estimated_expiry_days === "number") {
+    return {
+      date: daysFromNow(draft.estimated_expiry_days),
+      estimated: true,
+    };
+  }
+
+  return { date: "", estimated: false };
 }
 
 /** Compute an ISO date string N days from today using setDate (DST-safe). */
+function toLocalIsoDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function daysFromNow(n: number): string {
   const d = new Date();
   d.setDate(d.getDate() + n);
-  return d.toISOString().split("T")[0];
+  return toLocalIsoDate(d);
 }
 
 const QUICK_PICKS: { label: string; days: number }[] = [
@@ -72,6 +91,7 @@ export default function InventorySection({
   fridgeId,
   pendingDrafts,
   inventoryItems,
+  storageType,
 }: Props) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -85,7 +105,7 @@ export default function InventorySection({
   const [expiryData, setExpiryData] = useState<Record<string, ExpiryEntry>>(
     () =>
       Object.fromEntries(
-        pendingDrafts.map((d) => [d.id, { date: "", estimated: false }])
+        pendingDrafts.map((d) => [d.id, createInitialExpiryEntry(d)])
       )
   );
 
@@ -146,17 +166,21 @@ export default function InventorySection({
     setPhase("promoting");
     setError(null);
 
-    const inputs: InventoryItemInput[] = pendingDrafts.map((draft) => ({
-      draft_id: draft.id,
-      name: draft.name,
-      quantity: draft.quantity,
-      unit: draft.unit,
-      category: draft.category,
-      confidence: draft.confidence,
-      expiry_date: expiryData[draft.id]?.date || null,
-      purchase_date: null,
-      expiry_estimated: expiryData[draft.id]?.estimated || false,
-    }));
+    const inputs: InventoryItemInput[] = pendingDrafts.map((draft) => {
+      const entry = expiryData[draft.id] ?? createInitialExpiryEntry(draft);
+
+      return {
+        draft_id: draft.id,
+        name: draft.name,
+        quantity: draft.quantity,
+        unit: draft.unit,
+        category: draft.category,
+        confidence: draft.confidence,
+        expiry_date: entry.date || null,
+        purchase_date: null,
+        expiry_estimated: entry.estimated,
+      };
+    });
 
     const result = await promoteToInventoryAction(fridgeId, inputs);
 
@@ -386,7 +410,7 @@ export default function InventorySection({
             }}
           >
             {pendingDrafts.map((draft) => {
-              const entry = expiryData[draft.id] ?? { date: "", estimated: false };
+              const entry = expiryData[draft.id] ?? createInitialExpiryEntry(draft);
               const isPromoting = phase === "promoting";
 
               return (
@@ -594,6 +618,19 @@ export default function InventorySection({
                       </button>
                     )}
                   </div>
+
+                  {entry.date && entry.estimated && (
+                    <p
+                      style={{
+                        fontSize: "0.75rem",
+                        color: "var(--color-muted)",
+                        fontFamily: "var(--font-display)",
+                        letterSpacing: "0.04em",
+                      }}
+                    >
+                      AI forecast active - replace with printed expiry when available.
+                    </p>
+                  )}
                 </div>
               );
             })}
@@ -972,6 +1009,20 @@ export default function InventorySection({
                             </span>
                           )}
                         </div>
+
+                        {storageType === "freezer" && item.purchase_date && (
+                          <span
+                            style={{
+                              fontSize: "0.75rem",
+                              color: "var(--color-muted)",
+                              fontFamily: "var(--font-display)",
+                              letterSpacing: "0.04em",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            added {item.purchase_date}
+                          </span>
+                        )}
 
                         {/* Action buttons: Edit | Used | Discard */}
                         <div

@@ -8,11 +8,13 @@ import { confirmDraftAction, addSingleItem } from "./actions";
 import { compressImage } from "@/lib/image/compress";
 
 type Phase = "idle" | "uploading" | "review" | "confirming" | "done" | "error" | "single-add";
-type UploadTarget = "batch" | "single";
+type UploadTarget = "batch" | "single" | "receipt";
 type SingleAddMode = "manual" | "photo";
+type StorageType = "fridge" | "freezer";
 
 interface Props {
   fridgeId: string;
+  storageType: StorageType;
 }
 
 interface SingleItemInput {
@@ -25,14 +27,21 @@ interface SingleItemInput {
   purchase_date: string;
 }
 
+function toLocalIsoDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function todayIsoDate(): string {
-  return new Date().toISOString().slice(0, 10);
+  return toLocalIsoDate(new Date());
 }
 
 function dateFromDays(days: number): string {
   const d = new Date();
   d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
+  return toLocalIsoDate(d);
 }
 
 function createSingleItemInitialState(): SingleItemInput {
@@ -47,7 +56,7 @@ function createSingleItemInitialState(): SingleItemInput {
   };
 }
 
-export default function IntakeSection({ fridgeId }: Props) {
+export default function IntakeSection({ fridgeId, storageType }: Props) {
   const router = useRouter();
   const [, startTransition] = useTransition();
 
@@ -64,6 +73,7 @@ export default function IntakeSection({ fridgeId }: Props) {
   const [singleSubmitting, setSingleSubmitting] = useState(false);
 
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const receiptInputRef = useRef<HTMLInputElement>(null);
   const singlePhotoInputRef = useRef<HTMLInputElement>(null);
 
   async function handleUpload(file: File, target: UploadTarget) {
@@ -77,6 +87,7 @@ export default function IntakeSection({ fridgeId }: Props) {
 
       const formData = new FormData();
       formData.append("photo", compressedFile);
+      formData.append("source", target === "receipt" ? "receipt" : "photo");
 
       const res = await fetch(`/api/intake/${fridgeId}`, {
         method: "POST",
@@ -144,6 +155,13 @@ export default function IntakeSection({ fridgeId }: Props) {
     if (singlePhotoInputRef.current) singlePhotoInputRef.current.value = "";
   }
 
+  async function handleReceiptPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await handleUpload(file, "receipt");
+    if (receiptInputRef.current) receiptInputRef.current.value = "";
+  }
+
   function updateItem(id: string, field: keyof DraftItem, value: string) {
     setItems((prev) =>
       prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
@@ -162,6 +180,9 @@ export default function IntakeSection({ fridgeId }: Props) {
     if (result.success) {
       setConfirmedCount(result.count);
       setPhase("done");
+      startTransition(() => {
+        router.refresh();
+      });
       return;
     }
 
@@ -284,7 +305,7 @@ export default function IntakeSection({ fridgeId }: Props) {
   if (phase === "idle") {
     return (
       <div style={card}>
-        <p style={label}>grocery intake</p>
+        <p style={label}>{storageType === "freezer" ? "freezer intake" : "grocery intake"}</p>
         <h2
           style={{
             fontFamily: "var(--font-display)",
@@ -295,7 +316,7 @@ export default function IntakeSection({ fridgeId }: Props) {
             letterSpacing: "-0.02em",
           }}
         >
-          Add groceries
+          {storageType === "freezer" ? "Add freezer items" : "Add groceries"}
         </h2>
         <p
           style={{
@@ -305,30 +326,20 @@ export default function IntakeSection({ fridgeId }: Props) {
             lineHeight: 1.6,
           }}
         >
-          Take a photo of your groceries. AI will extract a draft list - you can
-          edit it before confirming.
+          {storageType === "freezer"
+            ? "Manually add freezer items and choose the date they were added."
+            : "Take a grocery photo or upload a receipt photo. AI extracts a draft list, then you review and confirm before it becomes inventory truth."}
         </p>
 
-        <style>{`
-          .intake-actions {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-          }
-          @media (min-width: 640px) {
-            .intake-actions {
-              flex-direction: row;
-            }
-            .intake-actions > * {
-              flex: 1;
-            }
-          }
-        `}</style>
-        <div className="intake-actions">
-          <label
-            htmlFor="photo-input"
+        {storageType === "freezer" ? (
+          <button
+            onClick={() => {
+              resetSingleState();
+              setSingleMode("manual");
+              setPhase("single-add");
+            }}
             style={{
-              display: "flex",
+              display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
               gap: "0.5rem",
@@ -342,61 +353,143 @@ export default function IntakeSection({ fridgeId }: Props) {
               fontSize: "1rem",
               letterSpacing: "0.05em",
               cursor: "pointer",
-              transition: "opacity 150ms ease, transform 100ms ease",
               touchAction: "manipulation",
-              width: "100%",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-            onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.96)")}
-            onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
-          >
-            <span style={{ fontSize: "1.25rem" }}>📷</span>
-            Take Photo
-          </label>
-          <input
-            id="photo-input"
-            ref={photoInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            style={{ display: "none" }}
-            onChange={handleBatchPhotoChange}
-          />
-
-          <button
-            onClick={() => {
-              resetSingleState();
-              setPhase("single-add");
-            }}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "0.5rem",
-              padding: "0.5rem 1rem",
-              minHeight: "56px",
-              background: "transparent",
-              color: "var(--color-text)",
-              border: "1px solid var(--color-border)",
-              borderRadius: "var(--radius-card)",
-              fontFamily: "var(--font-display)",
-              fontSize: "1rem",
-              letterSpacing: "0.05em",
-              cursor: "pointer",
-              transition: "border-color 150ms ease, transform 100ms ease",
-              touchAction: "manipulation",
-              width: "100%",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--color-cold)")}
-            onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--color-border)")}
-            onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.96)")}
-            onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
           >
             <span style={{ fontSize: "1.25rem" }}>➕</span>
-            Add Single Item
+            Add Freezer Item
           </button>
-        </div>
+        ) : (
+          <>
+            <style>{`
+              .intake-actions {
+                display: flex;
+                flex-direction: column;
+                gap: 0.75rem;
+              }
+              @media (min-width: 640px) {
+                .intake-actions {
+                  flex-direction: row;
+                }
+                .intake-actions > * {
+                  flex: 1;
+                }
+              }
+            `}</style>
+            <div className="intake-actions">
+              <label
+                htmlFor="photo-input"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "0.5rem",
+                  padding: "0.5rem 1rem",
+                  minHeight: "56px",
+                  background: "var(--color-cold-dim)",
+                  color: "var(--color-cold)",
+                  border: "1px solid var(--color-cold)",
+                  borderRadius: "var(--radius-card)",
+                  fontFamily: "var(--font-display)",
+                  fontSize: "1rem",
+                  letterSpacing: "0.05em",
+                  cursor: "pointer",
+                  transition: "opacity 150ms ease, transform 100ms ease",
+                  touchAction: "manipulation",
+                  width: "100%",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
+                onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+                onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.96)")}
+                onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+              >
+                <span style={{ fontSize: "1.25rem" }}>📷</span>
+                Take Photo
+              </label>
+              <input
+                id="photo-input"
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                style={{ display: "none" }}
+                onChange={handleBatchPhotoChange}
+              />
+
+              <label
+                htmlFor="receipt-input"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "0.5rem",
+                  padding: "0.5rem 1rem",
+                  minHeight: "56px",
+                  background: "transparent",
+                  color: "var(--color-text)",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: "var(--radius-card)",
+                  fontFamily: "var(--font-display)",
+                  fontSize: "1rem",
+                  letterSpacing: "0.05em",
+                  cursor: "pointer",
+                  transition: "border-color 150ms ease, transform 100ms ease",
+                  touchAction: "manipulation",
+                  width: "100%",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--color-cold)")}
+                onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--color-border)")}
+                onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.96)")}
+                onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+              >
+                <span style={{ fontSize: "1.25rem" }}>🧾</span>
+                Upload Receipt
+              </label>
+              <input
+                id="receipt-input"
+                ref={receiptInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                style={{ display: "none" }}
+                onChange={handleReceiptPhotoChange}
+              />
+
+              <button
+                onClick={() => {
+                  resetSingleState();
+                  setPhase("single-add");
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "0.5rem",
+                  padding: "0.5rem 1rem",
+                  minHeight: "56px",
+                  background: "transparent",
+                  color: "var(--color-text)",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: "var(--radius-card)",
+                  fontFamily: "var(--font-display)",
+                  fontSize: "1rem",
+                  letterSpacing: "0.05em",
+                  cursor: "pointer",
+                  transition: "border-color 150ms ease, transform 100ms ease",
+                  touchAction: "manipulation",
+                  width: "100%",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--color-cold)")}
+                onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--color-border)")}
+                onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.96)")}
+                onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+              >
+                <span style={{ fontSize: "1.25rem" }}>➕</span>
+                Add Single Item
+              </button>
+            </div>
+          </>
+        )}
       </div>
     );
   }
@@ -406,47 +499,49 @@ export default function IntakeSection({ fridgeId }: Props) {
       <div style={card}>
         <p style={label}>single item intake</p>
 
-        <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem", flexWrap: "wrap" }}>
-          <button
-            onClick={() => setSingleMode("manual")}
-            style={{
-              minHeight: "44px",
-              padding: "0.5rem 0.875rem",
-              background: singleMode === "manual" ? "var(--color-cold-dim)" : "transparent",
-              color: singleMode === "manual" ? "var(--color-cold)" : "var(--color-muted)",
-              border: `1px solid ${singleMode === "manual" ? "var(--color-cold)" : "var(--color-border)"}`,
-              borderRadius: "var(--radius-card)",
-              fontFamily: "var(--font-display)",
-              fontSize: "0.75rem",
-              letterSpacing: "0.05em",
-              cursor: "pointer",
-              touchAction: "manipulation",
-            }}
-          >
-            Manual
-          </button>
+        {storageType === "fridge" && (
+          <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem", flexWrap: "wrap" }}>
+            <button
+              onClick={() => setSingleMode("manual")}
+              style={{
+                minHeight: "44px",
+                padding: "0.5rem 0.875rem",
+                background: singleMode === "manual" ? "var(--color-cold-dim)" : "transparent",
+                color: singleMode === "manual" ? "var(--color-cold)" : "var(--color-muted)",
+                border: `1px solid ${singleMode === "manual" ? "var(--color-cold)" : "var(--color-border)"}`,
+                borderRadius: "var(--radius-card)",
+                fontFamily: "var(--font-display)",
+                fontSize: "0.75rem",
+                letterSpacing: "0.05em",
+                cursor: "pointer",
+                touchAction: "manipulation",
+              }}
+            >
+              Manual
+            </button>
 
-          <button
-            onClick={() => setSingleMode("photo")}
-            style={{
-              minHeight: "44px",
-              padding: "0.5rem 0.875rem",
-              background: singleMode === "photo" ? "var(--color-cold-dim)" : "transparent",
-              color: singleMode === "photo" ? "var(--color-cold)" : "var(--color-muted)",
-              border: `1px solid ${singleMode === "photo" ? "var(--color-cold)" : "var(--color-border)"}`,
-              borderRadius: "var(--radius-card)",
-              fontFamily: "var(--font-display)",
-              fontSize: "0.75rem",
-              letterSpacing: "0.05em",
-              cursor: "pointer",
-              touchAction: "manipulation",
-            }}
-          >
-            Photo
-          </button>
-        </div>
+            <button
+              onClick={() => setSingleMode("photo")}
+              style={{
+                minHeight: "44px",
+                padding: "0.5rem 0.875rem",
+                background: singleMode === "photo" ? "var(--color-cold-dim)" : "transparent",
+                color: singleMode === "photo" ? "var(--color-cold)" : "var(--color-muted)",
+                border: `1px solid ${singleMode === "photo" ? "var(--color-cold)" : "var(--color-border)"}`,
+                borderRadius: "var(--radius-card)",
+                fontFamily: "var(--font-display)",
+                fontSize: "0.75rem",
+                letterSpacing: "0.05em",
+                cursor: "pointer",
+                touchAction: "manipulation",
+              }}
+            >
+              Photo
+            </button>
+          </div>
+        )}
 
-        {singleMode === "photo" && (
+        {storageType === "fridge" && singleMode === "photo" && (
           <div style={{ marginBottom: "1rem" }}>
             <label
               htmlFor="single-photo-input"
@@ -545,30 +640,82 @@ export default function IntakeSection({ fridgeId }: Props) {
             }}
           />
 
-          <input
-            type="date"
-            value={singleItem.expiry_date ?? ""}
-            onChange={(e) =>
-              setSingleItem((prev) => ({
-                ...prev,
-                expiry_date: e.target.value || null,
-                expiry_estimated: false,
-              }))
-            }
-            style={{
-              width: "100%",
-              minHeight: "44px",
-              padding: "0.5rem 0.625rem",
-              background: "var(--color-surface)",
-              border: "1px solid var(--color-border)",
-              borderRadius: "var(--radius-card)",
-              color: "var(--color-text)",
-              fontFamily: "var(--font-body)",
-              fontSize: "16px",
-              outline: "none",
-              colorScheme: "dark",
-            }}
-          />
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
+            <p
+              style={{
+                fontSize: "0.75rem",
+                color: "var(--color-muted)",
+                fontFamily: "var(--font-display)",
+                letterSpacing: "0.04em",
+              }}
+            >
+              Expiry date (optional)
+            </p>
+            <input
+              type="date"
+              aria-label="Expiry date"
+              value={singleItem.expiry_date ?? ""}
+              onChange={(e) =>
+                setSingleItem((prev) => ({
+                  ...prev,
+                  expiry_date: e.target.value || null,
+                  expiry_estimated: false,
+                }))
+              }
+              style={{
+                width: "100%",
+                minHeight: "44px",
+                padding: "0.5rem 0.625rem",
+                background: "var(--color-surface)",
+                border: "1px solid var(--color-border)",
+                borderRadius: "var(--radius-card)",
+                color: "var(--color-text)",
+                fontFamily: "var(--font-body)",
+                fontSize: "16px",
+                outline: "none",
+                colorScheme: "dark",
+              }}
+            />
+          </div>
+
+          {storageType === "freezer" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
+              <p
+                style={{
+                  fontSize: "0.75rem",
+                  color: "var(--color-muted)",
+                  fontFamily: "var(--font-display)",
+                  letterSpacing: "0.04em",
+                }}
+              >
+                Date added to freezer
+              </p>
+              <input
+                type="date"
+                aria-label="Date added to freezer"
+                value={singleItem.purchase_date}
+                onChange={(e) =>
+                  setSingleItem((prev) => ({
+                    ...prev,
+                    purchase_date: e.target.value || todayIsoDate(),
+                  }))
+                }
+                style={{
+                  width: "100%",
+                  minHeight: "44px",
+                  padding: "0.5rem 0.625rem",
+                  background: "var(--color-surface)",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: "var(--radius-card)",
+                  color: "var(--color-text)",
+                  fontFamily: "var(--font-body)",
+                  fontSize: "16px",
+                  outline: "none",
+                  colorScheme: "dark",
+                }}
+              />
+            </div>
+          )}
 
           <div style={{ display: "flex", gap: "0.5rem" }}>
             <input
@@ -642,7 +789,11 @@ export default function IntakeSection({ fridgeId }: Props) {
               touchAction: "manipulation",
             }}
           >
-            {singleSubmitting ? "Adding..." : "Add to Fridge"}
+            {singleSubmitting
+              ? "Adding..."
+              : storageType === "freezer"
+                ? "Add to Freezer"
+                : "Add to Fridge"}
           </button>
 
           <button
@@ -694,7 +845,11 @@ export default function IntakeSection({ fridgeId }: Props) {
             }}
           />
           <style>{`@keyframes intake-spin { to { transform: rotate(360deg); } }`}</style>
-          {uploadTarget === "single" ? "Analyzing single item photo..." : "Analyzing photo..."}
+          {uploadTarget === "single"
+            ? "Analyzing single item photo..."
+            : uploadTarget === "receipt"
+              ? "Reading receipt..."
+              : "Analyzing photo..."}
         </div>
       </div>
     );
