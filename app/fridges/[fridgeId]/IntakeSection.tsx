@@ -14,8 +14,9 @@ import { useState, useRef } from "react";
 import { nanoid } from "nanoid";
 import type { DraftItem } from "@/lib/intake/types";
 import { confirmDraftAction } from "./actions";
+import { compressImage } from "@/lib/image/compress";
 
-type Phase = "idle" | "uploading" | "review" | "confirming" | "done" | "error";
+type Phase = "idle" | "uploading" | "review" | "confirming" | "done" | "error" | "single-add";
 
 interface Props {
   fridgeId: string;
@@ -37,8 +38,11 @@ export default function IntakeSection({ fridgeId }: Props) {
     setError(null);
 
     try {
+      const compressed = await compressImage(file);
+      const compressedFile = new File([compressed], file.name, { type: "image/jpeg" });
+
       const formData = new FormData();
-      formData.append("photo", file);
+      formData.append("photo", compressedFile);
 
       const res = await fetch(`/api/intake/${fridgeId}`, {
         method: "POST",
@@ -162,40 +166,122 @@ export default function IntakeSection({ fridgeId }: Props) {
           edit it before confirming.
         </p>
 
-        {/* Hidden file input */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          style={{ display: "none" }}
-          onChange={handleFileChange}
-        />
+        {/* Visible trigger buttons */}
+        <style>{`
+          .intake-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+          }
+          @media (min-width: 640px) {
+            .intake-actions {
+              flex-direction: row;
+            }
+            .intake-actions > * {
+              flex: 1;
+            }
+          }
+        `}</style>
+        <div className="intake-actions">
+          <label
+            htmlFor="photo-input"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "0.5rem",
+              padding: "0.5rem 1rem",
+              minHeight: "56px",
+              background: "var(--color-cold-dim)",
+              color: "var(--color-cold)",
+              border: "1px solid var(--color-cold)",
+              borderRadius: "var(--radius-card)",
+              fontFamily: "var(--font-display)",
+              fontSize: "1rem",
+              letterSpacing: "0.05em",
+              cursor: "pointer",
+              transition: "opacity 150ms ease, transform 100ms ease",
+              touchAction: "manipulation",
+              width: "100%",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+            onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.96)")}
+            onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+          >
+            <span style={{ fontSize: "1.25rem" }}>📷</span>
+            Take Photo
+          </label>
+          <input
+            id="photo-input"
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            style={{ display: "none" }}
+            onChange={handleFileChange}
+          />
 
-        {/* Visible trigger button */}
+          <button
+            onClick={() => setPhase("single-add")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "0.5rem",
+              padding: "0.5rem 1rem",
+              minHeight: "56px",
+              background: "transparent",
+              color: "var(--color-text)",
+              border: "1px solid var(--color-border)",
+              borderRadius: "var(--radius-card)",
+              fontFamily: "var(--font-display)",
+              fontSize: "1rem",
+              letterSpacing: "0.05em",
+              cursor: "pointer",
+              transition: "border-color 150ms ease, transform 100ms ease",
+              touchAction: "manipulation",
+              width: "100%",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--color-cold)")}
+            onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--color-border)")}
+            onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.96)")}
+            onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+          >
+            <span style={{ fontSize: "1.25rem" }}>➕</span>
+            Add Single Item
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SINGLE ADD PHASE (Placeholder for T16)
+  // ═══════════════════════════════════════════════════════════════════════════
+  if (phase === "single-add") {
+    return (
+      <div style={card}>
+        <p style={label}>grocery intake</p>
+        <p style={{ color: "var(--color-muted)", fontSize: "0.875rem", marginBottom: "1rem" }}>
+          Single item form will be implemented here.
+        </p>
         <button
-          onClick={() => fileInputRef.current?.click()}
+          onClick={reset}
           style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            padding: "0.5rem 1rem",
-            background: "var(--color-cold-dim)",
-            color: "var(--color-cold)",
-            border: "1px solid var(--color-cold)",
-            borderRadius: "var(--radius-card)",
-            fontFamily: "var(--font-display)",
+            background: "none",
+            border: "none",
+            color: "var(--color-muted)",
             fontSize: "0.8125rem",
-            letterSpacing: "0.05em",
             cursor: "pointer",
-            transition: "opacity 150ms ease, transform 100ms ease",
+            padding: "0.25rem 0",
+            fontFamily: "var(--font-body)",
+            textDecoration: "underline",
+            textDecorationColor: "var(--color-border)",
+            touchAction: "manipulation",
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
-          onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-          onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.96)")}
-          onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
         >
-          <span style={{ fontSize: "1rem" }}>📷</span>
-          Upload photo
+          Cancel
         </button>
       </div>
     );
@@ -249,9 +335,9 @@ export default function IntakeSection({ fridgeId }: Props) {
         {/* Draft rows */}
         <div
           style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "0.5rem",
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+            gap: "0.75rem",
             marginBottom: "1.25rem",
           }}
         >
@@ -263,6 +349,10 @@ export default function IntakeSection({ fridgeId }: Props) {
                 gridTemplateColumns: "1fr 4.5rem 4.5rem auto auto",
                 gap: "0.5rem",
                 alignItems: "center",
+                background: "var(--color-surface)",
+                padding: "0.5rem",
+                borderRadius: "var(--radius-card)",
+                border: "1px solid var(--color-border)",
               }}
             >
               {/* Name */}
@@ -274,12 +364,13 @@ export default function IntakeSection({ fridgeId }: Props) {
                 disabled={isConfirming}
                 style={{
                   padding: "0.375rem 0.625rem",
+                  minHeight: "44px",
                   background: "var(--color-surface)",
                   border: "1px solid var(--color-border)",
                   borderRadius: "var(--radius-card)",
                   color: "var(--color-text)",
                   fontFamily: "var(--font-body)",
-                  fontSize: "0.8125rem",
+                  fontSize: "16px",
                   outline: "none",
                   transition: "border-color 120ms ease",
                 }}
@@ -296,12 +387,13 @@ export default function IntakeSection({ fridgeId }: Props) {
                 disabled={isConfirming}
                 style={{
                   padding: "0.375rem 0.5rem",
+                  minHeight: "44px",
                   background: "var(--color-surface)",
                   border: "1px solid var(--color-border)",
                   borderRadius: "var(--radius-card)",
                   color: "var(--color-text)",
                   fontFamily: "var(--font-body)",
-                  fontSize: "0.8125rem",
+                  fontSize: "16px",
                   outline: "none",
                   transition: "border-color 120ms ease",
                 }}
@@ -318,12 +410,13 @@ export default function IntakeSection({ fridgeId }: Props) {
                 disabled={isConfirming}
                 style={{
                   padding: "0.375rem 0.5rem",
+                  minHeight: "44px",
                   background: "var(--color-surface)",
                   border: "1px solid var(--color-border)",
                   borderRadius: "var(--radius-card)",
                   color: "var(--color-text)",
                   fontFamily: "var(--font-body)",
-                  fontSize: "0.8125rem",
+                  fontSize: "16px",
                   outline: "none",
                   transition: "border-color 120ms ease",
                 }}
@@ -363,17 +456,18 @@ export default function IntakeSection({ fridgeId }: Props) {
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  width: "1.625rem",
-                  height: "1.625rem",
+                  width: "2.75rem",
+                  height: "2.75rem",
                   background: "transparent",
                   border: "1px solid var(--color-border)",
                   borderRadius: "var(--radius-card)",
                   color: "var(--color-muted)",
                   cursor: "pointer",
-                  fontSize: "0.75rem",
+                  fontSize: "1.25rem",
                   lineHeight: 1,
                   flexShrink: 0,
                   transition: "border-color 120ms ease, color 120ms ease",
+                  touchAction: "manipulation",
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.borderColor = "#f87171";
@@ -407,6 +501,7 @@ export default function IntakeSection({ fridgeId }: Props) {
               alignItems: "center",
               gap: "0.375rem",
               padding: "0.5rem 1.125rem",
+              minHeight: "44px",
               background: items.length === 0 || isConfirming ? "var(--color-cold-dim)" : "var(--color-cold-dim)",
               color: items.length === 0 || isConfirming ? "var(--color-muted)" : "var(--color-cold)",
               border: `1px solid ${items.length === 0 || isConfirming ? "var(--color-border)" : "var(--color-cold)"}`,
@@ -417,6 +512,7 @@ export default function IntakeSection({ fridgeId }: Props) {
               cursor: items.length === 0 || isConfirming ? "not-allowed" : "pointer",
               opacity: items.length === 0 ? 0.45 : 1,
               transition: "opacity 150ms ease, transform 100ms ease",
+              touchAction: "manipulation",
             }}
             onMouseEnter={(e) => {
               if (items.length > 0 && !isConfirming) e.currentTarget.style.opacity = "0.85";
@@ -459,10 +555,12 @@ export default function IntakeSection({ fridgeId }: Props) {
               fontSize: "0.8125rem",
               cursor: isConfirming ? "not-allowed" : "pointer",
               padding: "0.25rem 0",
+              minHeight: "44px",
               fontFamily: "var(--font-body)",
               textDecoration: "underline",
               textDecorationColor: "var(--color-border)",
               transition: "color 120ms ease",
+              touchAction: "manipulation",
             }}
             onMouseEnter={(e) => (e.currentTarget.style.color = "var(--color-text)")}
             onMouseLeave={(e) => (e.currentTarget.style.color = "var(--color-muted)")}
@@ -509,21 +607,23 @@ export default function IntakeSection({ fridgeId }: Props) {
         </p>
         <button
           onClick={reset}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            padding: "0.5rem 1rem",
-            background: "transparent",
-            color: "var(--color-muted)",
-            border: "1px solid var(--color-border)",
-            borderRadius: "var(--radius-card)",
-            fontFamily: "var(--font-display)",
-            fontSize: "0.8125rem",
-            letterSpacing: "0.05em",
-            cursor: "pointer",
-            transition: "border-color 120ms ease, color 120ms ease",
-          }}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              padding: "0.5rem 1rem",
+              minHeight: "44px",
+              background: "transparent",
+              color: "var(--color-muted)",
+              border: "1px solid var(--color-border)",
+              borderRadius: "var(--radius-card)",
+              fontFamily: "var(--font-display)",
+              fontSize: "0.8125rem",
+              letterSpacing: "0.05em",
+              cursor: "pointer",
+              transition: "border-color 120ms ease, color 120ms ease",
+              touchAction: "manipulation",
+            }}
           onMouseEnter={(e) => {
             e.currentTarget.style.borderColor = "var(--color-cold)";
             e.currentTarget.style.color = "var(--color-cold)";
@@ -579,6 +679,7 @@ export default function IntakeSection({ fridgeId }: Props) {
           display: "inline-flex",
           alignItems: "center",
           padding: "0.5rem 1rem",
+          minHeight: "44px",
           background: "transparent",
           color: "#f87171",
           border: "1px solid rgba(248,113,113,0.4)",
@@ -588,6 +689,7 @@ export default function IntakeSection({ fridgeId }: Props) {
           letterSpacing: "0.05em",
           cursor: "pointer",
           transition: "border-color 120ms ease, opacity 120ms ease",
+          touchAction: "manipulation",
         }}
         onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
         onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
