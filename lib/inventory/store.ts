@@ -7,7 +7,7 @@
 import { nanoid } from "nanoid";
 import { getDb } from "@/lib/db/client";
 import type { DraftItem } from "@/lib/intake/types";
-import type { InventoryItem, InventoryItemInput } from "./types";
+import type { InventoryItem, InventoryItemInput, InventoryItemUpdateInput } from "./types";
 
 /**
  * Return all pending (unconfirmed) draft items for a fridge, ordered
@@ -109,4 +109,76 @@ export function listInventoryItems(fridgeId: string): InventoryItem[] {
     ...row,
     expiry_estimated: row.expiry_estimated !== 0,
   }));
+}
+
+/**
+ * Update the editable fields of a single inventory item.
+ *
+ * Scoped by both itemId AND fridgeId to prevent cross-fridge writes.
+ * Sets updated_at = datetime('now') on the row.
+ *
+ * @throws if the item is not found in the given fridge (changes === 0)
+ */
+export function updateInventoryItem(
+  fridgeId: string,
+  itemId: string,
+  input: InventoryItemUpdateInput
+): void {
+  const db = getDb();
+  const result = db
+    .prepare(
+      `UPDATE inventory_items
+       SET name             = ?,
+           quantity         = ?,
+           unit             = ?,
+           expiry_date      = ?,
+           expiry_estimated = ?,
+           updated_at       = datetime('now')
+       WHERE id = ? AND fridge_id = ?`
+    )
+    .run(
+      input.name,
+      input.quantity,
+      input.unit,
+      input.expiry_date,
+      input.expiry_estimated ? 1 : 0,
+      itemId,
+      fridgeId
+    );
+
+  if (result.changes === 0) {
+    throw new Error(`Item ${itemId} not found in fridge ${fridgeId}`);
+  }
+}
+
+/**
+ * Flip the status of an active inventory item to 'used' or 'discarded'.
+ *
+ * Scoped by itemId, fridgeId, AND status = 'active' so non-active items
+ * are silently rejected (changes === 0 ⇒ throw).
+ * Never deletes the row — preserves the audit trail.
+ *
+ * @throws if the item is not found, belongs to a different fridge, or is
+ *         already non-active (changes === 0)
+ */
+export function setInventoryItemStatus(
+  fridgeId: string,
+  itemId: string,
+  status: "used" | "discarded"
+): void {
+  const db = getDb();
+  const result = db
+    .prepare(
+      `UPDATE inventory_items
+       SET status     = ?,
+           updated_at = datetime('now')
+       WHERE id = ? AND fridge_id = ? AND status = 'active'`
+    )
+    .run(status, itemId, fridgeId);
+
+  if (result.changes === 0) {
+    throw new Error(
+      `Item ${itemId} not found in fridge ${fridgeId} or already non-active`
+    );
+  }
 }

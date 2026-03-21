@@ -28,3 +28,15 @@ export interface InventoryItemInput {
   expiry_date: string | null;
   expiry_estimated: boolean;
 }
+
+/**
+ * All editable fields for an existing inventory item.
+ * The caller passes the full current values — no partial-update ambiguity.
+ */
+export interface InventoryItemUpdateInput {
+  name: string;
+  quantity: string;
+  unit: string;
+  expiry_date: string | null;
+  expiry_estimated: boolean;
+}

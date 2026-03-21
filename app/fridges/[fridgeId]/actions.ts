@@ -7,8 +7,8 @@
 
 import { saveDraftItems } from "@/lib/intake/store";
 import type { DraftItem } from "@/lib/intake/types";
-import { promoteToInventory } from "@/lib/inventory/store";
-import type { InventoryItemInput } from "@/lib/inventory/types";
+import { promoteToInventory, updateInventoryItem, setInventoryItemStatus } from "@/lib/inventory/store";
+import type { InventoryItemInput, InventoryItemUpdateInput } from "@/lib/inventory/types";
 
 /**
  * Persist a reviewed draft batch to intake_drafts.
@@ -69,5 +69,60 @@ export async function promoteToInventoryAction(
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error(`[inventory] promoteToInventoryAction failed for fridge ${fridgeId}: ${message}`);
     return { success: false, count: 0, error: message };
+  }
+}
+
+/**
+ * Edit a single inventory item's name, quantity, unit, and expiry fields.
+ *
+ * Validates that name is non-empty. Scoped by both itemId and fridgeId.
+ *
+ * @returns { success: true } on success; { success: false, error } on failure.
+ */
+export async function updateInventoryItemAction(
+  fridgeId: string,
+  itemId: string,
+  input: InventoryItemUpdateInput
+): Promise<{ success: boolean; error?: string }> {
+  if (!input.name.trim()) {
+    return { success: false, error: "Item name cannot be empty." };
+  }
+
+  try {
+    updateInventoryItem(fridgeId, itemId, input);
+    console.log(`[inventory] Updated item ${itemId} in fridge ${fridgeId}`);
+    return { success: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error(`[inventory] updateInventoryItemAction failed for fridge ${fridgeId}: ${message}`);
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Mark a single active inventory item as 'used' or 'discarded'.
+ *
+ * Validates status is one of the two allowed values. Scoped by both
+ * itemId and fridgeId. Never deletes the row.
+ *
+ * @returns { success: true } on success; { success: false, error } on failure.
+ */
+export async function setInventoryItemStatusAction(
+  fridgeId: string,
+  itemId: string,
+  status: "used" | "discarded"
+): Promise<{ success: boolean; error?: string }> {
+  if (status !== "used" && status !== "discarded") {
+    return { success: false, error: `Invalid status: ${status}. Must be 'used' or 'discarded'.` };
+  }
+
+  try {
+    setInventoryItemStatus(fridgeId, itemId, status);
+    console.log(`[inventory] Marked item ${itemId} as ${status} in fridge ${fridgeId}`);
+    return { success: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error(`[inventory] setInventoryItemStatusAction failed for fridge ${fridgeId}: ${message}`);
+    return { success: false, error: message };
   }
 }

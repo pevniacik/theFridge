@@ -44,7 +44,7 @@
 
 ## Tasks
 
-- [ ] **T01: Add inventory mutation store functions and Server Actions** `est:30m`
+- [x] **T01: Add inventory mutation store functions and Server Actions** `est:30m`
   - Why: The data layer must support single-item update and status-flip mutations before the UI can call them. This task creates the backend contract that S05/S06 will also consume.
   - Files: `lib/inventory/types.ts`, `lib/inventory/store.ts`, `app/fridges/[fridgeId]/actions.ts`
   - Do: Add `InventoryItemUpdateInput` type. Add `updateInventoryItem(fridgeId, itemId, input)` and `setInventoryItemStatus(fridgeId, itemId, status)` store functions — both scoped by `fridge_id` AND `id`, both setting `updated_at = datetime('now')`. Add `updateInventoryItemAction` and `setInventoryItemStatusAction` Server Actions with structured results and `[inventory]` logging.
