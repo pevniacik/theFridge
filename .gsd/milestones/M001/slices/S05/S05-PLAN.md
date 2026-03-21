@@ -44,7 +44,7 @@
 
 ## Tasks
 
-- [ ] **T01: Build inventory analysis module and wire into fridge page** `est:45m`
+- [x] **T01: Build inventory analysis module and wire into fridge page** `est:45m`
   - Why: R009 and R010 both depend on a server-side analysis layer that classifies inventory items into urgency buckets and generates cooking suggestions. This must exist before any UI can render it. Wiring the analysis call into `page.tsx` proves the data flows correctly at the server level.
   - Files: `lib/inventory/analysis.ts`, `lib/inventory/types.ts`, `app/fridges/[fridgeId]/page.tsx`
   - Do: Define analysis result types (StatusSummary, UrgencyBucket, SuggestionCard). Implement pure synchronous functions: `analyzeInventory(items: InventoryItem[], now?: Date)` returning urgency-classified items and summary counts, `generateSuggestions(items: InventoryItem[], now?: Date)` returning cooking suggestion cards grounded in item names. Urgency rules: expired = expiry_date < today; expiring-soon = expiry_date within 3 days; estimated-expiry-soon = same but with expiry_estimated=true (softer treatment); forgotten = no expiry but updated_at > 14 days ago; ok = everything else. Wire `analyzeInventory` and `generateSuggestions` calls into `page.tsx` after `listInventoryItems`, passing results as props to a placeholder or the real component in T02.

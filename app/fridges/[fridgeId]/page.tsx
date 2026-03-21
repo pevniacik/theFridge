@@ -10,6 +10,7 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { getFridgeById } from "@/lib/fridges/store";
 import { listPendingDrafts, listInventoryItems } from "@/lib/inventory/store";
+import { analyzeInventory, generateSuggestions } from "@/lib/inventory/analysis";
 import QrCode from "@/components/QrCode";
 import IntakeSection from "./IntakeSection";
 import InventorySection from "./InventorySection";
@@ -112,6 +113,14 @@ export default async function FridgeContextPage({ params }: Props) {
   const typeColor = fridge.type === "fridge" ? "var(--color-cold)" : "#a78bfa";
   const pendingDrafts = listPendingDrafts(fridge.id);
   const inventoryItems = listInventoryItems(fridge.id);
+
+  // ── Server-side analysis (S05) ────────────────────────────────────────────
+  // analyzeInventory and generateSuggestions are pure synchronous functions
+  // that run entirely on the server — no client fetch, no useEffect.
+  // Results are passed as props to StatusSection in T02.
+  const analysisResult = analyzeInventory(inventoryItems);
+  const suggestions = generateSuggestions(inventoryItems);
+  // TODO T02: render <StatusSection analysisResult={analysisResult} suggestions={suggestions} />
 
   return (
     <div
