@@ -9,5 +9,6 @@ export interface DraftItem {
   name: string;
   quantity: string;
   unit: string;
+  category: string;
   confidence: "high" | "low";
 }

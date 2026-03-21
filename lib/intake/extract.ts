@@ -23,9 +23,9 @@ const EXTRACTION_PROMPT =
 /** Stub items returned when OPENAI_API_KEY is not set. */
 function stubItems(): DraftItem[] {
   return [
-    { id: nanoid(10), name: "Milk", quantity: "1", unit: "litre", confidence: "high" },
-    { id: nanoid(10), name: "Greek Yogurt", quantity: "2", unit: "pots", confidence: "high" },
-    { id: nanoid(10), name: "Butter", quantity: "", unit: "", confidence: "low" },
+    { id: nanoid(10), name: "Milk", quantity: "1", unit: "litre", category: "", confidence: "high" },
+    { id: nanoid(10), name: "Greek Yogurt", quantity: "2", unit: "pots", category: "", confidence: "high" },
+    { id: nanoid(10), name: "Butter", quantity: "", unit: "", category: "", confidence: "low" },
   ];
 }
 
@@ -88,6 +88,7 @@ export async function extractDraftFromImage(
         name: item.name,
         quantity: item.quantity ?? "",
         unit: item.unit ?? "",
+        category: ((item as Record<string, unknown>).category as string) ?? "",
         confidence: item.confidence === "low" ? "low" : "high",
       }));
   } catch (err) {

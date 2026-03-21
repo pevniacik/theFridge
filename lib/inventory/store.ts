@@ -17,7 +17,7 @@ export function listPendingDrafts(fridgeId: string): DraftItem[] {
   const db = getDb();
   const rows = db
     .prepare(
-      `SELECT id, name, quantity, unit, confidence
+      `SELECT id, name, quantity, unit, category, confidence
        FROM intake_drafts
        WHERE fridge_id = ? AND status = 'pending'
        ORDER BY created_at ASC`
@@ -27,6 +27,7 @@ export function listPendingDrafts(fridgeId: string): DraftItem[] {
     name: string;
     quantity: string;
     unit: string;
+    category: string;
     confidence: string;
   }>;
 
@@ -35,6 +36,7 @@ export function listPendingDrafts(fridgeId: string): DraftItem[] {
     name: row.name,
     quantity: row.quantity,
     unit: row.unit,
+    category: row.category,
     confidence: row.confidence as "high" | "low",
   }));
 }
@@ -58,9 +60,9 @@ export function promoteToInventory(
 
   const insertItem = db.prepare(
     `INSERT INTO inventory_items
-       (id, fridge_id, draft_id, name, quantity, unit, confidence,
-        expiry_date, expiry_estimated, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')`
+       (id, fridge_id, draft_id, name, quantity, unit, category, confidence,
+        expiry_date, purchase_date, expiry_estimated, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')`
   );
 
   const confirmDraft = db.prepare(
@@ -78,11 +80,15 @@ export function promoteToInventory(
         item.name,
         item.quantity,
         item.unit,
+        item.category,
         item.confidence,
         item.expiry_date,
+        item.purchase_date,
         item.expiry_estimated ? 1 : 0
       );
-      confirmDraft.run(item.draft_id);
+      if (item.draft_id) {
+        confirmDraft.run(item.draft_id);
+      }
     }
   });
 
@@ -97,8 +103,8 @@ export function listInventoryItems(fridgeId: string): InventoryItem[] {
   const db = getDb();
   const rows = db
     .prepare(
-      `SELECT id, fridge_id, draft_id, name, quantity, unit, confidence,
-              expiry_date, expiry_estimated, status, added_at, updated_at
+      `SELECT id, fridge_id, draft_id, name, quantity, unit, category, confidence,
+              expiry_date, purchase_date, expiry_estimated, status, added_at, updated_at
        FROM inventory_items
        WHERE fridge_id = ? AND status = 'active'
        ORDER BY added_at DESC`
@@ -131,6 +137,7 @@ export function updateInventoryItem(
        SET name             = ?,
            quantity         = ?,
            unit             = ?,
+           category         = ?,
            expiry_date      = ?,
            expiry_estimated = ?,
            updated_at       = datetime('now')
@@ -140,6 +147,7 @@ export function updateInventoryItem(
       input.name,
       input.quantity,
       input.unit,
+      input.category,
       input.expiry_date,
       input.expiry_estimated ? 1 : 0,
       itemId,

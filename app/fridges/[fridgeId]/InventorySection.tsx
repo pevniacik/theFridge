@@ -43,6 +43,7 @@ interface EditDraft {
   name: string;
   quantity: string;
   unit: string;
+  category: string;
   expiry_date: string; // "" means null
   expiry_estimated: boolean;
 }
@@ -150,8 +151,10 @@ export default function InventorySection({
       name: draft.name,
       quantity: draft.quantity,
       unit: draft.unit,
+      category: draft.category,
       confidence: draft.confidence,
       expiry_date: expiryData[draft.id]?.date || null,
+      purchase_date: null,
       expiry_estimated: expiryData[draft.id]?.estimated || false,
     }));
 
@@ -199,6 +202,7 @@ export default function InventorySection({
       name: item.name,
       quantity: item.quantity,
       unit: item.unit,
+      category: item.category,
       expiry_date: item.expiry_date ?? "",
       expiry_estimated: item.expiry_estimated,
     });
@@ -216,6 +220,7 @@ export default function InventorySection({
       name: editDraft.name,
       quantity: editDraft.quantity,
       unit: editDraft.unit,
+      category: editDraft.category,
       expiry_date: editDraft.expiry_date || null,
       expiry_estimated: editDraft.expiry_estimated,
     };
@@ -765,6 +770,19 @@ export default function InventorySection({
                               setEditDraft((prev) => prev ? { ...prev, name: e.target.value } : prev)
                             }
                             style={{ ...inputStyle(true), width: "100%" }}
+                          />
+
+                          {/* Row 1b: category */}
+                          <input
+                            type="text"
+                            value={editDraft.category}
+                            aria-label="Category"
+                            disabled={isPending}
+                            onChange={(e) =>
+                              setEditDraft((prev) => prev ? { ...prev, category: e.target.value } : prev)
+                            }
+                            style={{ ...inputStyle(), width: "100%" }}
+                            placeholder="category"
                           />
 
                           {/* Row 2: quantity + unit */}
