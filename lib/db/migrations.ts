@@ -45,6 +45,8 @@ export function addColumnIfNotExists(
 export function runMigrations(db: Database.Database): void {
   // Add category to intake_drafts
   addColumnIfNotExists(db, "intake_drafts", "category", "TEXT NOT NULL DEFAULT ''");
+  // Add estimated_expiry_days to intake_drafts
+  addColumnIfNotExists(db, "intake_drafts", "estimated_expiry_days", "INTEGER");
   // Add category to inventory_items
   addColumnIfNotExists(db, "inventory_items", "category", "TEXT NOT NULL DEFAULT ''");
   // Add purchase_date to inventory_items

@@ -11,4 +11,5 @@ export interface DraftItem {
   unit: string;
   category: string;
   confidence: "high" | "low";
+  estimated_expiry_days: number | null;
 }

@@ -16,16 +16,18 @@ import type { DraftItem } from "./types";
 const EXTRACTION_PROMPT =
   'Extract all visible grocery or food items from this photo. ' +
   'Return JSON: { "items": [ { "name": string, "quantity": string, "unit": string, ' +
-  '"confidence": "high" | "low" } ] }. ' +
+  '"confidence": "high" | "low", "category": string, "estimated_expiry_days": number | null } ] }. ' +
+  'For category, use one of: Dairy, Meat, Produce, Frozen, Pantry, Beverage, Bakery, Other. ' +
+  'For estimated_expiry_days, estimate typical shelf life in days from today (null for non-perishable). ' +
   'Use confidence="low" for anything unclear, partially visible, or uncertain. ' +
   'For quantity and unit, use empty string if not detectable.';
 
 /** Stub items returned when OPENAI_API_KEY is not set. */
 function stubItems(): DraftItem[] {
   return [
-    { id: nanoid(10), name: "Milk", quantity: "1", unit: "litre", category: "", confidence: "high" },
-    { id: nanoid(10), name: "Greek Yogurt", quantity: "2", unit: "pots", category: "", confidence: "high" },
-    { id: nanoid(10), name: "Butter", quantity: "", unit: "", category: "", confidence: "low" },
+    { id: nanoid(10), name: "Milk", quantity: "1", unit: "litre", category: "Dairy", confidence: "high", estimated_expiry_days: 7 },
+    { id: nanoid(10), name: "Greek Yogurt", quantity: "2", unit: "pots", category: "Dairy", confidence: "high", estimated_expiry_days: 14 },
+    { id: nanoid(10), name: "Butter", quantity: "", unit: "", category: "Dairy", confidence: "low", estimated_expiry_days: 30 },
   ];
 }
 
@@ -83,14 +85,18 @@ export async function extractDraftFromImage(
           item !== null &&
           typeof (item as Record<string, unknown>).name === "string"
       )
-      .map((item) => ({
-        id: nanoid(10),
-        name: item.name,
-        quantity: item.quantity ?? "",
-        unit: item.unit ?? "",
-        category: ((item as Record<string, unknown>).category as string) ?? "",
-        confidence: item.confidence === "low" ? "low" : "high",
-      }));
+      .map((item) => {
+        const estimatedDays = (item as Record<string, unknown>).estimated_expiry_days;
+        return {
+          id: nanoid(10),
+          name: item.name,
+          quantity: item.quantity ?? "",
+          unit: item.unit ?? "",
+          category: ((item as Record<string, unknown>).category as string) ?? "",
+          confidence: item.confidence === "low" ? "low" : "high",
+          estimated_expiry_days: typeof estimatedDays === "number" ? estimatedDays : null,
+        };
+      });
   } catch (err) {
     console.error("[intake] Extraction failed:", err);
     return [];

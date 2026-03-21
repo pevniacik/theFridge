@@ -23,12 +23,12 @@ export function saveDraftItems(fridgeId: string, items: DraftItem[]): void {
   }
 
   const insert = db.prepare(
-    "INSERT INTO intake_drafts (id, fridge_id, name, quantity, unit, confidence) VALUES (?, ?, ?, ?, ?, ?)"
+    "INSERT INTO intake_drafts (id, fridge_id, name, quantity, unit, category, confidence, estimated_expiry_days) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
   );
 
   const runAll = db.transaction((draftItems: DraftItem[]) => {
     for (const item of draftItems) {
-      insert.run(item.id, fridgeId, item.name, item.quantity, item.unit, item.confidence);
+      insert.run(item.id, fridgeId, item.name, item.quantity, item.unit, item.category, item.confidence, item.estimated_expiry_days);
     }
   });
 

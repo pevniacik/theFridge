@@ -17,7 +17,7 @@ export function listPendingDrafts(fridgeId: string): DraftItem[] {
   const db = getDb();
   const rows = db
     .prepare(
-      `SELECT id, name, quantity, unit, category, confidence
+      `SELECT id, name, quantity, unit, category, confidence, estimated_expiry_days
        FROM intake_drafts
        WHERE fridge_id = ? AND status = 'pending'
        ORDER BY created_at ASC`
@@ -29,6 +29,7 @@ export function listPendingDrafts(fridgeId: string): DraftItem[] {
     unit: string;
     category: string;
     confidence: string;
+    estimated_expiry_days: number | null;
   }>;
 
   return rows.map((row) => ({
@@ -38,6 +39,7 @@ export function listPendingDrafts(fridgeId: string): DraftItem[] {
     unit: row.unit,
     category: row.category,
     confidence: row.confidence as "high" | "low",
+    estimated_expiry_days: row.estimated_expiry_days,
   }));
 }
 
