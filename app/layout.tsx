@@ -1,9 +1,21 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  userScalable: false,
+};
 
 export const metadata: Metadata = {
   title: "theFridge",
   description: "Local-first fridge & freezer inventory — scan, track, cook.",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "theFridge",
+  },
 };
 
 export default function RootLayout({
@@ -25,7 +37,13 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <div className="min-h-screen flex flex-col">
+        <div
+          className="min-h-screen flex flex-col"
+          style={{
+            paddingTop: "env(safe-area-inset-top)",
+            paddingBottom: "env(safe-area-inset-bottom)",
+          }}
+        >
           <header
             style={{
               borderBottom: "1px solid var(--color-border)",
