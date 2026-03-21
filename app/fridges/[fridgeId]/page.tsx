@@ -14,6 +14,7 @@ import { analyzeInventory, generateSuggestions } from "@/lib/inventory/analysis"
 import QrCode from "@/components/QrCode";
 import IntakeSection from "./IntakeSection";
 import InventorySection from "./InventorySection";
+import RecipeSection from "./RecipeSection";
 
 interface Props {
   params: Promise<{ fridgeId: string }>;
@@ -249,12 +250,15 @@ export default async function FridgeContextPage({ params }: Props) {
         </div>
       </div>
 
-      <IntakeSection fridgeId={fridge.id} />
+      <IntakeSection fridgeId={fridge.id} storageType={fridge.type} />
+
+      {fridge.type === "fridge" && <RecipeSection fridgeId={fridge.id} />}
 
       <InventorySection
         fridgeId={fridge.id}
         pendingDrafts={pendingDrafts}
         inventoryItems={inventoryItems}
+        storageType={fridge.type}
       />
 
       {/* Actions */}
