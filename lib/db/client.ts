@@ -8,6 +8,7 @@
 import Database from "better-sqlite3";
 import path from "path";
 import fs from "fs";
+import { runMigrations } from "@/lib/db/migrations";
 
 const DB_DIR = path.join(process.cwd(), "data");
 const DB_PATH = path.join(DB_DIR, "fridges.db");
@@ -67,6 +68,8 @@ export function getDb(): Database.Database {
       updated_at       TEXT NOT NULL DEFAULT (datetime('now'))
     );
   `);
+
+  runMigrations(_db);
 
   return _db;
 }
