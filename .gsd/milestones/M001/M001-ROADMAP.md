@@ -59,7 +59,7 @@ This milestone is complete only when all are true:
 - [x] **S02: Photo intake with review-first draft** `risk:high` `depends:[S01]`
   > After this: From a storage context, you can upload a grocery photo and get a draft list to review and correct before saving.
 
-- [ ] **S03: Inventory truth and expiry model** `risk:high` `depends:[S02]`
+- [x] **S03: Inventory truth and expiry model** `risk:high` `depends:[S02]`
   > After this: Confirmed items become item-level inventory in the selected fridge/freezer with expiry or estimated expiry recorded.
 
 - [ ] **S04: Shared household inventory maintenance** `risk:high` `depends:[S03]`

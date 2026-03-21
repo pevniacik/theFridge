@@ -154,4 +154,39 @@ const [phase, setPhase] = useState<Phase>("idle");
 
 **Benefit:** Adding or removing a phase requires only adding/removing one branch and one state transition — no boolean flag interactions to audit.
 
+## useState initializer function avoids hydration flash for prop-derived state
+
+**Context:** Client components in Next.js App Router that derive initial state from RSC-passed props.
+
+**Gotcha:** Using `useEffect` to initialize state from props runs after the first render, causing a visible flash (the component renders with empty/default state, then re-renders with the derived state). Using a `useState` initializer function runs synchronously before the first render.
+
+**Pattern:**
+```ts
+// ✅ correct — runs once before first render, no flash
+const [expiryData, setExpiryData] = useState<Record<string, ExpiryEntry>>(
+  () => Object.fromEntries(pendingDrafts.map((d) => [d.id, { date: "", estimated: false }]))
+);
+
+// ❌ causes flash — effect runs after first render
+useEffect(() => {
+  setExpiryData(Object.fromEntries(pendingDrafts.map((d) => [d.id, { date: "", estimated: false }])));
+}, [pendingDrafts]);
+```
+
+**Caveat:** The initializer only runs once (on mount). If the parent RSC passes new prop values after mount (e.g. via router.refresh()), the component re-mounts entirely in Next.js App Router — the initializer runs again with the fresh props, so this is not a problem in practice for RSC-driven prop updates.
+
+## Quick-pick date computation: setDate(getDate() + N) is DST-safe
+
+**Context:** Computing a future date N days from today in a client component.
+
+**Pattern:** `const d = new Date(); d.setDate(d.getDate() + N); return d.toISOString().split("T")[0];`
+
+**Why:** Adding milliseconds (`Date.now() + N * 86400000`) can shift the computed date by ±1 day across a DST boundary. `setDate` works with the local calendar and handles DST transitions correctly by operating on the logical calendar date rather than raw milliseconds.
+
+## inventory_items status column: use status flips, not DELETEs
+
+**Context:** The `inventory_items` table has a `status` column with CHECK constraint `('active', 'used', 'discarded')`.
+
+**Pattern for S04+:** When a household member marks food as eaten, used, or discarded, update `status` to `'used'` or `'discarded'` rather than deleting the row. `listInventoryItems` already filters `WHERE status = 'active'`, so old items disappear from the UI automatically. This preserves history and keeps the schema consistent with its own CHECK constraint intent.
+
 

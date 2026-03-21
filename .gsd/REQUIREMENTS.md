@@ -4,26 +4,15 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Active
 
-### R005 — The system stores item-level inventory for each fridge/freezer rather than only broad categories.
-- Class: primary-user-loop
-- Status: active
-- Description: The system stores item-level inventory for each fridge/freezer rather than only broad categories.
-- Why it matters: The user wants actual status on demand, not a vague summary.
-- Source: user
-- Primary owning slice: M001/S03
-- Supporting slices: M001/S04, M001/S05, M001/S06
-- Validation: mapped
-- Notes: Version 1 can be presence-first rather than exact-unit heavy.
-
 ### R006 — The system stores explicit expiry dates when known and allows estimated expiry when the food has no printed producer date.
 - Class: core-capability
-- Status: active
+- Status: validated
 - Description: The system stores explicit expiry dates when known and allows estimated expiry when the food has no printed producer date.
 - Why it matters: Produce and similar items still need aging awareness even without package dates.
 - Source: user
 - Primary owning slice: M001/S03
 - Supporting slices: M001/S05, M001/S06
-- Validation: mapped
+- Validation: S03 verified: inventory_items schema includes expiry_date (TEXT nullable) and expiry_estimated (INTEGER 0/1). Quick-pick day buttons (3d/7d/14d/30d) set expiry_estimated=1; explicit date input sets expiry_estimated=0; blank expiry is valid (null). DB confirmed: promoted row via 7d quick-pick shows expiry_date='2026-03-28', expiry_estimated=1; row with no date shows expiry_date=null, expiry_estimated=0. Amber 'est.' badge renders in the inventory list for estimated entries.
 - Notes: User-provided estimation is part of the intended experience.
 
 ### R007 — After cooking, eating, moving, or throwing food away, household members can update the inventory so it stays truthful.
@@ -149,6 +138,17 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: S02 verified: IntakeSection renders an editable review grid (name, quantity, unit inputs + delete button per row) before any item reaches intake_drafts. Confirm step is explicit and gated — no item is written to the DB without user action. Browser test: edited a name, deleted a row, confirmed — only the modified items were persisted.
 - Notes: This is especially important for names, storage placement, and expiry details.
 
+### R005 — The system stores item-level inventory for each fridge/freezer rather than only broad categories.
+- Class: primary-user-loop
+- Status: validated
+- Description: The system stores item-level inventory for each fridge/freezer rather than only broad categories.
+- Why it matters: The user wants actual status on demand, not a vague summary.
+- Source: user
+- Primary owning slice: M001/S03
+- Supporting slices: M001/S04, M001/S05, M001/S06
+- Validation: S03 verified: inventory_items table persists item-level records scoped to each fridge via FK. After uploading a grocery photo, confirming the draft, and promoting via InventorySection, sqlite3 confirms individual named rows (Greek Yogurt, Butter) with correct fridge_id. listInventoryItems returns the active set per fridge. Browser renders the inventory list with name/quantity/unit per item.
+- Notes: Version 1 can be presence-first rather than exact-unit heavy.
+
 ### R014 — The app surfaces uncertainty, bad scans, and review requirements rather than silently mutating inventory with wrong data.
 - Class: failure-visibility
 - Status: validated
@@ -260,8 +260,8 @@ This file is the explicit capability and coverage contract for the project.
 | R002 | core-capability | validated | M001/S01 | M001/S06 | S01 verified: the app generates SVG QR codes server-side (lib/qr/generate.ts) encoding each fridge/freezer's full context URL. QR is rendered on the storage-context page and is print-ready. QR URL was confirmed to match the route contract via curl inspection. |
 | R003 | core-capability | validated | M001/S02 | M001/S06 | S02 verified: POST /api/intake/[fridgeId] accepts a photo upload and returns a structured JSON draft with named items, quantities, units, and confidence fields. Stub returns 3 items when OPENAI_API_KEY is absent; OpenAI gpt-4o-mini call is wired for when the key is present. curl test confirmed: 3 items returned for valid fridge + photo input. |
 | R004 | failure-visibility | validated | M001/S02 | M001/S03, M001/S06 | S02 verified: IntakeSection renders an editable review grid (name, quantity, unit inputs + delete button per row) before any item reaches intake_drafts. Confirm step is explicit and gated — no item is written to the DB without user action. Browser test: edited a name, deleted a row, confirmed — only the modified items were persisted. |
-| R005 | primary-user-loop | active | M001/S03 | M001/S04, M001/S05, M001/S06 | mapped |
-| R006 | core-capability | active | M001/S03 | M001/S05, M001/S06 | mapped |
+| R005 | primary-user-loop | validated | M001/S03 | M001/S04, M001/S05, M001/S06 | S03 verified: inventory_items table persists item-level records scoped to each fridge via FK. After uploading a grocery photo, confirming the draft, and promoting via InventorySection, sqlite3 confirms individual named rows (Greek Yogurt, Butter) with correct fridge_id. listInventoryItems returns the active set per fridge. Browser renders the inventory list with name/quantity/unit per item. |
+| R006 | core-capability | validated | M001/S03 | M001/S05, M001/S06 | S03 verified: inventory_items schema includes expiry_date (TEXT nullable) and expiry_estimated (INTEGER 0/1). Quick-pick day buttons (3d/7d/14d/30d) set expiry_estimated=1; explicit date input sets expiry_estimated=0; blank expiry is valid (null). DB confirmed: promoted row via 7d quick-pick shows expiry_date='2026-03-28', expiry_estimated=1; row with no date shows expiry_date=null, expiry_estimated=0. Amber 'est.' badge renders in the inventory list for estimated entries. |
 | R007 | continuity | active | M001/S04 | M001/S06 | mapped |
 | R008 | primary-user-loop | active | M001/S04 | M001/S05, M001/S06 | mapped |
 | R009 | launchability | active | M001/S05 | M001/S03, M001/S04, M001/S06 | mapped |
@@ -281,7 +281,7 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Coverage Summary
 
-- Active requirements: 9
-- Mapped to slices: 9
-- Validated: 5 (R001, R002, R003, R004, R014)
+- Active requirements: 7
+- Mapped to slices: 7
+- Validated: 7 (R001, R002, R003, R004, R005, R006, R014)
 - Unmapped active requirements: 0
