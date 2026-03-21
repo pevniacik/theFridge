@@ -1,39 +1,73 @@
 "use client";
 
-/**
- * app/fridges/[fridgeId]/IntakeSection.tsx
- *
- * Review-first photo intake flow.
- * Phases: idle → uploading → review → confirming → done | error
- *
- * Styling: inline style with var(--color-*) tokens to match the dark industrial
- * aesthetic established by S01 components.
- */
-
-import { useState, useRef } from "react";
+import { useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { nanoid } from "nanoid";
 import type { DraftItem } from "@/lib/intake/types";
-import { confirmDraftAction } from "./actions";
+import { confirmDraftAction, addSingleItem } from "./actions";
 import { compressImage } from "@/lib/image/compress";
 
 type Phase = "idle" | "uploading" | "review" | "confirming" | "done" | "error" | "single-add";
+type UploadTarget = "batch" | "single";
+type SingleAddMode = "manual" | "photo";
 
 interface Props {
   fridgeId: string;
 }
 
+interface SingleItemInput {
+  name: string;
+  quantity: string;
+  unit: string;
+  category: string;
+  expiry_date: string | null;
+  expiry_estimated: boolean;
+  purchase_date: string;
+}
+
+function todayIsoDate(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function dateFromDays(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+function createSingleItemInitialState(): SingleItemInput {
+  return {
+    name: "",
+    quantity: "",
+    unit: "",
+    category: "",
+    expiry_date: null,
+    expiry_estimated: false,
+    purchase_date: todayIsoDate(),
+  };
+}
+
 export default function IntakeSection({ fridgeId }: Props) {
+  const router = useRouter();
+  const [, startTransition] = useTransition();
+
   const [phase, setPhase] = useState<Phase>("idle");
+  const [uploadTarget, setUploadTarget] = useState<UploadTarget>("batch");
   const [items, setItems] = useState<DraftItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [confirmedCount, setConfirmedCount] = useState(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ── File selection handler ────────────────────────────────────────────────
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const [singleMode, setSingleMode] = useState<SingleAddMode>("manual");
+  const [singleItem, setSingleItem] = useState<SingleItemInput>(() => createSingleItemInitialState());
+  const [singleError, setSingleError] = useState<string | null>(null);
+  const [singleSuggesting, setSingleSuggesting] = useState(false);
+  const [singleSubmitting, setSingleSubmitting] = useState(false);
 
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const singlePhotoInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleUpload(file: File, target: UploadTarget) {
+    setUploadTarget(target);
     setPhase("uploading");
     setError(null);
 
@@ -49,11 +83,10 @@ export default function IntakeSection({ fridgeId }: Props) {
         body: formData,
       });
 
-      const data = await res.json();
+      const data = (await res.json()) as { items?: DraftItem[]; error?: string };
 
       if (!res.ok || !Array.isArray(data.items)) {
-        const msg = data.error ?? `Extraction failed (HTTP ${res.status})`;
-        setError(msg);
+        setError(data.error ?? `Extraction failed (HTTP ${res.status})`);
         setPhase("error");
         return;
       }
@@ -64,8 +97,26 @@ export default function IntakeSection({ fridgeId }: Props) {
         return;
       }
 
-      // Assign stable client-side IDs for React keys and the DB write.
-      const drafts: DraftItem[] = (data.items as DraftItem[]).map((item) => ({
+      if (target === "single") {
+        const first = data.items[0];
+        setSingleItem((prev) => ({
+          ...prev,
+          name: first.name,
+          quantity: first.quantity,
+          unit: first.unit,
+          category: first.category,
+          expiry_date:
+            first.estimated_expiry_days !== null ? dateFromDays(first.estimated_expiry_days) : null,
+          expiry_estimated: first.estimated_expiry_days !== null,
+          purchase_date: todayIsoDate(),
+        }));
+        setSingleMode("photo");
+        setSingleError(null);
+        setPhase("single-add");
+        return;
+      }
+
+      const drafts: DraftItem[] = data.items.map((item) => ({
         ...item,
         id: nanoid(10),
       }));
@@ -76,49 +127,144 @@ export default function IntakeSection({ fridgeId }: Props) {
       const message = err instanceof Error ? err.message : "Upload failed";
       setError(message);
       setPhase("error");
-    } finally {
-      // Reset file input so the same file can be re-selected if needed.
-      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }
 
-  // ── Item field update ─────────────────────────────────────────────────────
+  async function handleBatchPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await handleUpload(file, "batch");
+    if (photoInputRef.current) photoInputRef.current.value = "";
+  }
+
+  async function handleSinglePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await handleUpload(file, "single");
+    if (singlePhotoInputRef.current) singlePhotoInputRef.current.value = "";
+  }
+
   function updateItem(id: string, field: keyof DraftItem, value: string) {
     setItems((prev) =>
       prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
     );
   }
 
-  // ── Delete a row ──────────────────────────────────────────────────────────
   function deleteItem(id: string) {
     setItems((prev) => prev.filter((item) => item.id !== id));
   }
 
-  // ── Confirm handler ───────────────────────────────────────────────────────
   async function handleConfirm() {
     if (items.length === 0) return;
     setPhase("confirming");
 
     const result = await confirmDraftAction(fridgeId, items);
-
     if (result.success) {
       setConfirmedCount(result.count);
       setPhase("done");
-    } else {
-      setError(result.error ?? "Confirm failed");
-      setPhase("error");
+      return;
+    }
+
+    setError(result.error ?? "Confirm failed");
+    setPhase("error");
+  }
+
+  async function handleSuggestWithAi() {
+    if (!singleItem.name.trim()) {
+      setSingleError("Enter an item name first.");
+      return;
+    }
+
+    setSingleSuggesting(true);
+    setSingleError(null);
+
+    try {
+      const res = await fetch("/api/enrich", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name: singleItem.name }),
+      });
+
+      const data = (await res.json()) as {
+        category?: string;
+        estimated_expiry_days?: number | null;
+        error?: string;
+      };
+
+      if (!res.ok) {
+        setSingleError(data.error ?? `Enrichment failed (HTTP ${res.status})`);
+        return;
+      }
+
+      const estimatedDays =
+        typeof data.estimated_expiry_days === "number" ? data.estimated_expiry_days : null;
+
+      setSingleItem((prev) => ({
+        ...prev,
+        category: data.category ?? prev.category,
+        expiry_date: estimatedDays !== null ? dateFromDays(estimatedDays) : null,
+        expiry_estimated: estimatedDays !== null,
+      }));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Enrichment failed";
+      setSingleError(message);
+    } finally {
+      setSingleSuggesting(false);
     }
   }
 
-  // ── Reset to idle ─────────────────────────────────────────────────────────
+  async function handleAddSingleItem() {
+    if (!singleItem.name.trim() || singleSubmitting) {
+      if (!singleItem.name.trim()) {
+        setSingleError("Item name is required.");
+      }
+      return;
+    }
+
+    setSingleSubmitting(true);
+    setSingleError(null);
+
+    const result = await addSingleItem(fridgeId, {
+      name: singleItem.name.trim(),
+      quantity: singleItem.quantity,
+      unit: singleItem.unit,
+      category: singleItem.category || "Other",
+      expiry_date: singleItem.expiry_date,
+      expiry_estimated: singleItem.expiry_estimated,
+      purchase_date: singleItem.purchase_date || null,
+    });
+
+    if (!result.success) {
+      setSingleError(result.error ?? "Failed to add item.");
+      setSingleSubmitting(false);
+      return;
+    }
+
+    reset();
+    startTransition(() => {
+      router.refresh();
+    });
+  }
+
+  function resetSingleState() {
+    setSingleMode("manual");
+    setSingleItem(createSingleItemInitialState());
+    setSingleError(null);
+    setSingleSuggesting(false);
+    setSingleSubmitting(false);
+  }
+
   function reset() {
     setPhase("idle");
+    setUploadTarget("batch");
     setItems([]);
     setError(null);
     setConfirmedCount(0);
+    resetSingleState();
   }
 
-  // ── Shared card wrapper ───────────────────────────────────────────────────
   const card: React.CSSProperties = {
     padding: "1.5rem",
     background: "var(--color-panel)",
@@ -135,9 +281,6 @@ export default function IntakeSection({ fridgeId }: Props) {
     marginBottom: "1rem",
   };
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // IDLE PHASE
-  // ═══════════════════════════════════════════════════════════════════════════
   if (phase === "idle") {
     return (
       <div style={card}>
@@ -162,11 +305,10 @@ export default function IntakeSection({ fridgeId }: Props) {
             lineHeight: 1.6,
           }}
         >
-          Take a photo of your groceries. AI will extract a draft list — you can
+          Take a photo of your groceries. AI will extract a draft list - you can
           edit it before confirming.
         </p>
 
-        {/* Visible trigger buttons */}
         <style>{`
           .intake-actions {
             display: flex;
@@ -214,16 +356,19 @@ export default function IntakeSection({ fridgeId }: Props) {
           </label>
           <input
             id="photo-input"
-            ref={fileInputRef}
+            ref={photoInputRef}
             type="file"
             accept="image/*"
             capture="environment"
             style={{ display: "none" }}
-            onChange={handleFileChange}
+            onChange={handleBatchPhotoChange}
           />
 
           <button
-            onClick={() => setPhase("single-add")}
+            onClick={() => {
+              resetSingleState();
+              setPhase("single-add");
+            }}
             style={{
               display: "flex",
               alignItems: "center",
@@ -256,40 +401,274 @@ export default function IntakeSection({ fridgeId }: Props) {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SINGLE ADD PHASE (Placeholder for T16)
-  // ═══════════════════════════════════════════════════════════════════════════
   if (phase === "single-add") {
     return (
       <div style={card}>
-        <p style={label}>grocery intake</p>
-        <p style={{ color: "var(--color-muted)", fontSize: "0.875rem", marginBottom: "1rem" }}>
-          Single item form will be implemented here.
-        </p>
-        <button
-          onClick={reset}
-          style={{
-            background: "none",
-            border: "none",
-            color: "var(--color-muted)",
-            fontSize: "0.8125rem",
-            cursor: "pointer",
-            padding: "0.25rem 0",
-            fontFamily: "var(--font-body)",
-            textDecoration: "underline",
-            textDecorationColor: "var(--color-border)",
-            touchAction: "manipulation",
-          }}
-        >
-          Cancel
-        </button>
+        <p style={label}>single item intake</p>
+
+        <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem", flexWrap: "wrap" }}>
+          <button
+            onClick={() => setSingleMode("manual")}
+            style={{
+              minHeight: "44px",
+              padding: "0.5rem 0.875rem",
+              background: singleMode === "manual" ? "var(--color-cold-dim)" : "transparent",
+              color: singleMode === "manual" ? "var(--color-cold)" : "var(--color-muted)",
+              border: `1px solid ${singleMode === "manual" ? "var(--color-cold)" : "var(--color-border)"}`,
+              borderRadius: "var(--radius-card)",
+              fontFamily: "var(--font-display)",
+              fontSize: "0.75rem",
+              letterSpacing: "0.05em",
+              cursor: "pointer",
+              touchAction: "manipulation",
+            }}
+          >
+            Manual
+          </button>
+
+          <button
+            onClick={() => setSingleMode("photo")}
+            style={{
+              minHeight: "44px",
+              padding: "0.5rem 0.875rem",
+              background: singleMode === "photo" ? "var(--color-cold-dim)" : "transparent",
+              color: singleMode === "photo" ? "var(--color-cold)" : "var(--color-muted)",
+              border: `1px solid ${singleMode === "photo" ? "var(--color-cold)" : "var(--color-border)"}`,
+              borderRadius: "var(--radius-card)",
+              fontFamily: "var(--font-display)",
+              fontSize: "0.75rem",
+              letterSpacing: "0.05em",
+              cursor: "pointer",
+              touchAction: "manipulation",
+            }}
+          >
+            Photo
+          </button>
+        </div>
+
+        {singleMode === "photo" && (
+          <div style={{ marginBottom: "1rem" }}>
+            <label
+              htmlFor="single-photo-input"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "0.5rem",
+                minHeight: "44px",
+                padding: "0.5rem 0.875rem",
+                background: "var(--color-cold-dim)",
+                color: "var(--color-cold)",
+                border: "1px solid var(--color-cold)",
+                borderRadius: "var(--radius-card)",
+                fontFamily: "var(--font-display)",
+                fontSize: "0.75rem",
+                letterSpacing: "0.05em",
+                cursor: "pointer",
+                touchAction: "manipulation",
+              }}
+            >
+              📷 Take Single-Item Photo
+            </label>
+            <input
+              id="single-photo-input"
+              ref={singlePhotoInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              style={{ display: "none" }}
+              onChange={handleSinglePhotoChange}
+            />
+          </div>
+        )}
+
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "1rem" }}>
+          <input
+            type="text"
+            value={singleItem.name}
+            placeholder="Item name"
+            onChange={(e) => setSingleItem((prev) => ({ ...prev, name: e.target.value }))}
+            style={{
+              width: "100%",
+              minHeight: "44px",
+              padding: "0.5rem 0.625rem",
+              background: "var(--color-surface)",
+              border: "1px solid var(--color-border)",
+              borderRadius: "var(--radius-card)",
+              color: "var(--color-text)",
+              fontFamily: "var(--font-body)",
+              fontSize: "16px",
+              outline: "none",
+            }}
+          />
+
+          <button
+            onClick={handleSuggestWithAi}
+            disabled={singleSuggesting || singleSubmitting}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              minHeight: "44px",
+              padding: "0.5rem 0.875rem",
+              background: "transparent",
+              color: "var(--color-cold)",
+              border: "1px solid var(--color-cold)",
+              borderRadius: "var(--radius-card)",
+              fontFamily: "var(--font-display)",
+              fontSize: "0.75rem",
+              letterSpacing: "0.05em",
+              cursor: singleSuggesting || singleSubmitting ? "not-allowed" : "pointer",
+              opacity: singleSuggesting || singleSubmitting ? 0.6 : 1,
+              touchAction: "manipulation",
+            }}
+          >
+            {singleSuggesting ? "Suggesting..." : "Suggest with AI"}
+          </button>
+
+          <input
+            type="text"
+            value={singleItem.category}
+            placeholder="Category"
+            onChange={(e) => setSingleItem((prev) => ({ ...prev, category: e.target.value }))}
+            style={{
+              width: "100%",
+              minHeight: "44px",
+              padding: "0.5rem 0.625rem",
+              background: "var(--color-surface)",
+              border: "1px solid var(--color-border)",
+              borderRadius: "var(--radius-card)",
+              color: "var(--color-text)",
+              fontFamily: "var(--font-body)",
+              fontSize: "16px",
+              outline: "none",
+            }}
+          />
+
+          <input
+            type="date"
+            value={singleItem.expiry_date ?? ""}
+            onChange={(e) =>
+              setSingleItem((prev) => ({
+                ...prev,
+                expiry_date: e.target.value || null,
+                expiry_estimated: false,
+              }))
+            }
+            style={{
+              width: "100%",
+              minHeight: "44px",
+              padding: "0.5rem 0.625rem",
+              background: "var(--color-surface)",
+              border: "1px solid var(--color-border)",
+              borderRadius: "var(--radius-card)",
+              color: "var(--color-text)",
+              fontFamily: "var(--font-body)",
+              fontSize: "16px",
+              outline: "none",
+              colorScheme: "dark",
+            }}
+          />
+
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <input
+              type="text"
+              value={singleItem.quantity}
+              placeholder="Quantity"
+              onChange={(e) => setSingleItem((prev) => ({ ...prev, quantity: e.target.value }))}
+              style={{
+                flex: 1,
+                minHeight: "44px",
+                padding: "0.5rem 0.625rem",
+                background: "var(--color-surface)",
+                border: "1px solid var(--color-border)",
+                borderRadius: "var(--radius-card)",
+                color: "var(--color-text)",
+                fontFamily: "var(--font-body)",
+                fontSize: "16px",
+                outline: "none",
+              }}
+            />
+            <input
+              type="text"
+              value={singleItem.unit}
+              placeholder="Unit"
+              onChange={(e) => setSingleItem((prev) => ({ ...prev, unit: e.target.value }))}
+              style={{
+                flex: 1,
+                minHeight: "44px",
+                padding: "0.5rem 0.625rem",
+                background: "var(--color-surface)",
+                border: "1px solid var(--color-border)",
+                borderRadius: "var(--radius-card)",
+                color: "var(--color-text)",
+                fontFamily: "var(--font-body)",
+                fontSize: "16px",
+                outline: "none",
+              }}
+            />
+          </div>
+        </div>
+
+        {singleError && (
+          <p
+            style={{
+              fontSize: "0.8125rem",
+              color: "#f87171",
+              lineHeight: 1.5,
+              marginBottom: "1rem",
+            }}
+          >
+            {singleError}
+          </p>
+        )}
+
+        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+          <button
+            onClick={handleAddSingleItem}
+            disabled={singleSubmitting || !singleItem.name.trim()}
+            style={{
+              minHeight: "44px",
+              padding: "0.5rem 0.875rem",
+              background: "var(--color-cold-dim)",
+              color: "var(--color-cold)",
+              border: "1px solid var(--color-cold)",
+              borderRadius: "var(--radius-card)",
+              fontFamily: "var(--font-display)",
+              fontSize: "0.75rem",
+              letterSpacing: "0.05em",
+              cursor: singleSubmitting || !singleItem.name.trim() ? "not-allowed" : "pointer",
+              opacity: singleSubmitting || !singleItem.name.trim() ? 0.6 : 1,
+              touchAction: "manipulation",
+            }}
+          >
+            {singleSubmitting ? "Adding..." : "Add to Fridge"}
+          </button>
+
+          <button
+            onClick={reset}
+            disabled={singleSubmitting}
+            style={{
+              minHeight: "44px",
+              padding: "0.5rem 0.875rem",
+              background: "transparent",
+              color: "var(--color-muted)",
+              border: "1px solid var(--color-border)",
+              borderRadius: "var(--radius-card)",
+              fontFamily: "var(--font-display)",
+              fontSize: "0.75rem",
+              letterSpacing: "0.05em",
+              cursor: singleSubmitting ? "not-allowed" : "pointer",
+              touchAction: "manipulation",
+            }}
+          >
+            ← Back
+          </button>
+        </div>
       </div>
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // UPLOADING PHASE
-  // ═══════════════════════════════════════════════════════════════════════════
   if (phase === "uploading") {
     return (
       <div style={card}>
@@ -303,7 +682,6 @@ export default function IntakeSection({ fridgeId }: Props) {
             fontSize: "0.875rem",
           }}
         >
-          {/* Simple CSS spinner */}
           <span
             style={{
               display: "inline-block",
@@ -316,23 +694,18 @@ export default function IntakeSection({ fridgeId }: Props) {
             }}
           />
           <style>{`@keyframes intake-spin { to { transform: rotate(360deg); } }`}</style>
-          Analyzing photo…
+          {uploadTarget === "single" ? "Analyzing single item photo..." : "Analyzing photo..."}
         </div>
       </div>
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // REVIEW PHASE
-  // ═══════════════════════════════════════════════════════════════════════════
   if (phase === "review" || phase === "confirming") {
     const isConfirming = phase === "confirming";
 
     return (
       <div style={card}>
         <p style={label}>review draft · {items.length} item{items.length !== 1 ? "s" : ""}</p>
-
-        {/* Draft rows */}
         <div
           style={{
             display: "grid",
@@ -355,7 +728,6 @@ export default function IntakeSection({ fridgeId }: Props) {
                 border: "1px solid var(--color-border)",
               }}
             >
-              {/* Name */}
               <input
                 type="text"
                 value={item.name}
@@ -372,13 +744,9 @@ export default function IntakeSection({ fridgeId }: Props) {
                   fontFamily: "var(--font-body)",
                   fontSize: "16px",
                   outline: "none",
-                  transition: "border-color 120ms ease",
                 }}
-                onFocus={(e) => (e.currentTarget.style.borderColor = "var(--color-cold)")}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "var(--color-border)")}
               />
 
-              {/* Quantity */}
               <input
                 type="text"
                 value={item.quantity}
@@ -395,13 +763,9 @@ export default function IntakeSection({ fridgeId }: Props) {
                   fontFamily: "var(--font-body)",
                   fontSize: "16px",
                   outline: "none",
-                  transition: "border-color 120ms ease",
                 }}
-                onFocus={(e) => (e.currentTarget.style.borderColor = "var(--color-cold)")}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "var(--color-border)")}
               />
 
-              {/* Unit */}
               <input
                 type="text"
                 value={item.unit}
@@ -418,15 +782,11 @@ export default function IntakeSection({ fridgeId }: Props) {
                   fontFamily: "var(--font-body)",
                   fontSize: "16px",
                   outline: "none",
-                  transition: "border-color 120ms ease",
                 }}
-                onFocus={(e) => (e.currentTarget.style.borderColor = "var(--color-cold)")}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "var(--color-border)")}
               />
 
-              {/* Low-confidence badge */}
               <span
-                title={item.confidence === "low" ? "Low confidence — please verify" : undefined}
+                title={item.confidence === "low" ? "Low confidence - please verify" : undefined}
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -447,7 +807,6 @@ export default function IntakeSection({ fridgeId }: Props) {
                 {item.confidence === "low" ? "?" : ""}
               </span>
 
-              {/* Delete button */}
               <button
                 onClick={() => deleteItem(item.id)}
                 disabled={isConfirming}
@@ -466,25 +825,15 @@ export default function IntakeSection({ fridgeId }: Props) {
                   fontSize: "1.25rem",
                   lineHeight: 1,
                   flexShrink: 0,
-                  transition: "border-color 120ms ease, color 120ms ease",
                   touchAction: "manipulation",
                 }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "#f87171";
-                  e.currentTarget.style.color = "#f87171";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "var(--color-border)";
-                  e.currentTarget.style.color = "var(--color-muted)";
-                }}
               >
-                ×
+                x
               </button>
             </div>
           ))}
         </div>
 
-        {/* Action row */}
         <div
           style={{
             display: "flex",
@@ -502,7 +851,7 @@ export default function IntakeSection({ fridgeId }: Props) {
               gap: "0.375rem",
               padding: "0.5rem 1.125rem",
               minHeight: "44px",
-              background: items.length === 0 || isConfirming ? "var(--color-cold-dim)" : "var(--color-cold-dim)",
+              background: "var(--color-cold-dim)",
               color: items.length === 0 || isConfirming ? "var(--color-muted)" : "var(--color-cold)",
               border: `1px solid ${items.length === 0 || isConfirming ? "var(--color-border)" : "var(--color-cold)"}`,
               borderRadius: "var(--radius-card)",
@@ -511,38 +860,10 @@ export default function IntakeSection({ fridgeId }: Props) {
               letterSpacing: "0.05em",
               cursor: items.length === 0 || isConfirming ? "not-allowed" : "pointer",
               opacity: items.length === 0 ? 0.45 : 1,
-              transition: "opacity 150ms ease, transform 100ms ease",
               touchAction: "manipulation",
             }}
-            onMouseEnter={(e) => {
-              if (items.length > 0 && !isConfirming) e.currentTarget.style.opacity = "0.85";
-            }}
-            onMouseLeave={(e) => {
-              if (items.length > 0 && !isConfirming) e.currentTarget.style.opacity = "1";
-            }}
-            onMouseDown={(e) => {
-              if (items.length > 0 && !isConfirming) e.currentTarget.style.transform = "scale(0.96)";
-            }}
-            onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
           >
-            {isConfirming ? (
-              <>
-                <span
-                  style={{
-                    display: "inline-block",
-                    width: "0.75rem",
-                    height: "0.75rem",
-                    border: "2px solid var(--color-border)",
-                    borderTopColor: "var(--color-cold)",
-                    borderRadius: "50%",
-                    animation: "intake-spin 0.7s linear infinite",
-                  }}
-                />
-                Saving…
-              </>
-            ) : (
-              <>Confirm {items.length} item{items.length !== 1 ? "s" : ""} →</>
-            )}
+            {isConfirming ? "Saving..." : `Confirm ${items.length} item${items.length !== 1 ? "s" : ""} ->`}
           </button>
 
           <button
@@ -559,11 +880,8 @@ export default function IntakeSection({ fridgeId }: Props) {
               fontFamily: "var(--font-body)",
               textDecoration: "underline",
               textDecorationColor: "var(--color-border)",
-              transition: "color 120ms ease",
               touchAction: "manipulation",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--color-text)")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--color-muted)")}
           >
             Cancel
           </button>
@@ -572,9 +890,6 @@ export default function IntakeSection({ fridgeId }: Props) {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // DONE PHASE
-  // ═══════════════════════════════════════════════════════════════════════════
   if (phase === "done") {
     return (
       <div
@@ -607,33 +922,22 @@ export default function IntakeSection({ fridgeId }: Props) {
         </p>
         <button
           onClick={reset}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "0.5rem",
-              padding: "0.5rem 1rem",
-              minHeight: "44px",
-              background: "transparent",
-              color: "var(--color-muted)",
-              border: "1px solid var(--color-border)",
-              borderRadius: "var(--radius-card)",
-              fontFamily: "var(--font-display)",
-              fontSize: "0.8125rem",
-              letterSpacing: "0.05em",
-              cursor: "pointer",
-              transition: "border-color 120ms ease, color 120ms ease",
-              touchAction: "manipulation",
-            }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = "var(--color-cold)";
-            e.currentTarget.style.color = "var(--color-cold)";
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "0.5rem",
+            padding: "0.5rem 1rem",
+            minHeight: "44px",
+            background: "transparent",
+            color: "var(--color-muted)",
+            border: "1px solid var(--color-border)",
+            borderRadius: "var(--radius-card)",
+            fontFamily: "var(--font-display)",
+            fontSize: "0.8125rem",
+            letterSpacing: "0.05em",
+            cursor: "pointer",
+            touchAction: "manipulation",
           }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = "var(--color-border)";
-            e.currentTarget.style.color = "var(--color-muted)";
-          }}
-          onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.96)")}
-          onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
         >
           Upload more
         </button>
@@ -641,9 +945,6 @@ export default function IntakeSection({ fridgeId }: Props) {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // ERROR PHASE
-  // ═══════════════════════════════════════════════════════════════════════════
   return (
     <div
       style={{
@@ -688,13 +989,8 @@ export default function IntakeSection({ fridgeId }: Props) {
           fontSize: "0.8125rem",
           letterSpacing: "0.05em",
           cursor: "pointer",
-          transition: "border-color 120ms ease, opacity 120ms ease",
           touchAction: "manipulation",
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
-        onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-        onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.96)")}
-        onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
       >
         Try again
       </button>

@@ -72,6 +72,45 @@ export async function promoteToInventoryAction(
   }
 }
 
+export async function addSingleItem(
+  fridgeId: string,
+  item: {
+    name: string;
+    quantity: string;
+    unit: string;
+    category: string;
+    expiry_date: string | null;
+    expiry_estimated: boolean;
+    purchase_date: string | null;
+  }
+): Promise<{ success: boolean; error?: string }> {
+  if (!item.name.trim()) {
+    return { success: false, error: "Item name cannot be empty." };
+  }
+
+  try {
+    promoteToInventory(fridgeId, [
+      {
+        draft_id: null,
+        name: item.name,
+        quantity: item.quantity,
+        unit: item.unit,
+        category: item.category,
+        confidence: "high",
+        expiry_date: item.expiry_date,
+        expiry_estimated: item.expiry_estimated,
+        purchase_date: item.purchase_date,
+      },
+    ]);
+    console.log(`[intake] Added single item to inventory for fridge ${fridgeId}: ${item.name}`);
+    return { success: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error(`[intake] addSingleItem failed for fridge ${fridgeId}: ${message}`);
+    return { success: false, error: message };
+  }
+}
+
 /**
  * Edit a single inventory item's name, quantity, unit, and expiry fields.
  *
