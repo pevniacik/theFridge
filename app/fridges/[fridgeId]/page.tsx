@@ -9,8 +9,10 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { getFridgeById } from "@/lib/fridges/store";
+import { listPendingDrafts, listInventoryItems } from "@/lib/inventory/store";
 import QrCode from "@/components/QrCode";
 import IntakeSection from "./IntakeSection";
+import InventorySection from "./InventorySection";
 
 interface Props {
   params: Promise<{ fridgeId: string }>;
@@ -108,6 +110,8 @@ export default async function FridgeContextPage({ params }: Props) {
   const baseUrl = await getBaseUrl();
   const typeLabel = fridge.type === "fridge" ? "Refrigerator" : "Freezer";
   const typeColor = fridge.type === "fridge" ? "var(--color-cold)" : "#a78bfa";
+  const pendingDrafts = listPendingDrafts(fridge.id);
+  const inventoryItems = listInventoryItems(fridge.id);
 
   return (
     <div
@@ -237,6 +241,12 @@ export default async function FridgeContextPage({ params }: Props) {
       </div>
 
       <IntakeSection fridgeId={fridge.id} />
+
+      <InventorySection
+        fridgeId={fridge.id}
+        pendingDrafts={pendingDrafts}
+        inventoryItems={inventoryItems}
+      />
 
       {/* Actions */}
       <div style={{ marginTop: "2rem", display: "flex", gap: "1rem", alignItems: "center" }}>

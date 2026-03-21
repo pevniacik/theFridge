@@ -55,7 +55,7 @@
   - Verify: `npx tsc --noEmit` exits 0; `sqlite3 data/fridges.db ".schema inventory_items"` shows expected columns
   - Done when: TypeScript compiles clean, inventory_items table exists with all columns including expiry_date and expiry_estimated, and promoteToInventoryAction is exported and callable
 
-- [ ] **T02: Build InventorySection UI with expiry inputs and wire into fridge page** `est:45m`
+- [x] **T02: Build InventorySection UI with expiry inputs and wire into fridge page** `est:45m`
   - Why: Delivers the user-facing promotion flow — pending drafts → set expiry per item → promote → see inventory list. Without this, the data layer exists but users can't interact with it. Closes R005 (item-level inventory visible) and R006 (expiry input UX).
   - Files: `app/fridges/[fridgeId]/InventorySection.tsx`, `app/fridges/[fridgeId]/page.tsx`
   - Do: Create `InventorySection.tsx` as a `"use client"` component with phase state machine (idle/loading/promoting/done/error). Receive `pendingDrafts` and `inventoryItems` as props from RSC. Render pending drafts grid with read-only name/qty/unit, per-item date input, and quick-pick day buttons (3d/7d/14d/30d). Quick-pick computes date and sets `expiry_estimated=true`; explicit date sets `expiry_estimated=false`; blank is valid. Promote button calls `promoteToInventoryAction`, then `router.refresh()`. Show inventory list below. Handle empty states. Wire into `page.tsx` with `listPendingDrafts` and `listInventoryItems` calls. Follow inline `style={{}}` with `var(--color-*)` tokens pattern.
