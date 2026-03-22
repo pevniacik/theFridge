@@ -43,4 +43,19 @@ body {
 @media (max-width: 640px) {
   .mobile-stack { flex-direction: column !important; }
   .mobile-full { width: 100% !important; }
+  .mobile-hide { display: none !important; }
+  .qr-grid { grid-template-columns: 1fr !important; }
+}
+
+/* Collapsible QR section */
+details.qr-collapse summary {
+  list-style: none;
+  cursor: pointer;
+}
+details.qr-collapse summary::-webkit-details-marker {
+  display: none;
+}
+details.qr-collapse summary::marker {
+  display: none;
+  content: "";
 }

@@ -6,7 +6,7 @@ export default function HomePage() {
       style={{
         maxWidth: "52rem",
         margin: "0 auto",
-        padding: "4rem 1.5rem",
+        padding: "2rem 1rem",
       }}
     >
       {/* Hero */}
@@ -129,12 +129,14 @@ export default function HomePage() {
       </div>
 
       {/* CTA */}
-      <div style={{ display: "flex", gap: "0.875rem", flexWrap: "wrap" }}>
+      <div className="mobile-stack" style={{ display: "flex", gap: "0.875rem", flexWrap: "wrap" }}>
         <Link
           href="/fridges/new"
+          className="mobile-full"
           style={{
             display: "inline-flex",
             alignItems: "center",
+            justifyContent: "center",
             gap: "0.5rem",
             padding: "0.625rem 1.25rem",
             background: "var(--color-accent)",
@@ -151,9 +153,11 @@ export default function HomePage() {
         </Link>
         <Link
           href="/fridges"
+          className="mobile-full"
           style={{
             display: "inline-flex",
             alignItems: "center",
+            justifyContent: "center",
             padding: "0.625rem 1.25rem",
             border: "1px solid var(--color-border)",
             color: "var(--color-text)",

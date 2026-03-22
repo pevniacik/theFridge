@@ -67,6 +67,7 @@ export default function RootLayout({
               theFridge
             </span>
             <span
+              className="mobile-hide"
               style={{
                 width: "1px",
                 height: "1.25rem",
@@ -74,6 +75,7 @@ export default function RootLayout({
               }}
             />
             <span
+              className="mobile-hide"
               style={{
                 fontSize: "0.75rem",
                 color: "var(--color-muted)",
@@ -98,7 +100,7 @@ export default function RootLayout({
                 }}
               >
                 <span style={{ fontSize: "1rem" }}>⚙️</span>
-                <span style={{ fontFamily: "var(--font-display)" }}>Settings</span>
+                <span className="mobile-hide" style={{ fontFamily: "var(--font-display)" }}>Settings</span>
               </Link>
             </div>
           </header>
