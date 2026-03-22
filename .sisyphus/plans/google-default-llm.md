@@ -57,7 +57,7 @@ Make AI setup frictionless by defaulting to the free Google AI Studio path and g
 
 ## TODOs
 
-- [ ] 1. Settings page restructure — Google default, Advanced toggle
+- [x] 1. Settings page restructure — Google default, Advanced toggle
 
   **What to do**:
   - `app/settings/SettingsForm.tsx`:
@@ -74,17 +74,17 @@ Make AI setup frictionless by defaulting to the free Google AI Studio path and g
   - Do not remove any provider from the radio list
 
   **Acceptance Criteria**:
-  - [ ] Google is pre-selected by default for new users
-  - [ ] Google section with key link + model picker is immediately visible
-  - [ ] OpenAI/Anthropic are inside a collapsed "Advanced Providers" section
-  - [ ] Selecting an advanced provider switches all fields correctly
-  - [ ] `npm run build` passes
+  - [x] Google is pre-selected by default for new users
+  - [x] Google section with key link + model picker is immediately visible
+  - [x] OpenAI/Anthropic are inside a collapsed "Advanced Providers" section
+  - [x] Selecting an advanced provider switches all fields correctly
+  - [x] `npm run build` passes
 
   **Commit**: YES
   - Message: `feat(settings): default to Google AI Studio, demote others to Advanced`
   - Files: `app/settings/SettingsForm.tsx`, `app/settings/page.tsx`
 
-- [ ] 2. Onboarding banner on fridge page
+- [x] 2. Onboarding banner on fridge page
 
   **What to do**:
   - Create `app/fridges/[fridgeId]/SetupBanner.tsx`: a server component that accepts `hasProvider: boolean` prop. When `false`, renders a styled banner: "Set up free AI extraction in 30 seconds" with a link to `/settings`. When `true`, renders nothing.
@@ -95,16 +95,16 @@ Make AI setup frictionless by defaulting to the free Google AI Studio path and g
   - Do not use client-side state for the banner — server component is sufficient
 
   **Acceptance Criteria**:
-  - [ ] Banner appears when no provider is configured
-  - [ ] Banner links to `/settings`
-  - [ ] Banner does not appear when a provider is configured
-  - [ ] `npm run build` passes
+  - [x] Banner appears when no provider is configured
+  - [x] Banner links to `/settings`
+  - [x] Banner does not appear when a provider is configured
+  - [x] `npm run build` passes
 
   **Commit**: YES
   - Message: `feat(onboarding): setup banner when no AI provider configured`
   - Files: `app/fridges/[fridgeId]/SetupBanner.tsx`, `app/fridges/[fridgeId]/page.tsx`
 
-- [ ] 3. Defaults cleanup and documentation
+- [x] 3. Defaults cleanup and documentation
 
   **What to do**:
   - `AGENTS.md`: Update env vars note to mention Google AI Studio as recommended default
@@ -117,9 +117,9 @@ Make AI setup frictionless by defaulting to the free Google AI Studio path and g
   - Do not change provider factory logic
 
   **Acceptance Criteria**:
-  - [ ] Docs mention Google AI Studio as recommended
-  - [ ] `npx vitest run` passes (no regressions)
-  - [ ] `npm run build` passes
+  - [x] Docs mention Google AI Studio as recommended
+  - [x] `npx vitest run` passes (no regressions)
+  - [x] `npm run build` passes
 
   **Commit**: YES
   - Message: `docs: recommend Google AI Studio as default free provider`
@@ -129,10 +129,10 @@ Make AI setup frictionless by defaulting to the free Google AI Studio path and g
 
 ## Final Verification
 
-- [ ] F1. Build + tests pass
-- [ ] F2. Settings defaults to Google for new users
-- [ ] F3. Advanced toggle hides/shows OpenAI/Anthropic
-- [ ] F4. Banner appears on fridge page without provider, disappears with provider
+- [x] F1. Build + tests pass — type-check ✅ build ✅ vitest 44/44 ✅
+- [x] F2. Settings defaults to Google for new users — initialProvider defaults to "google"
+- [x] F3. Advanced toggle hides/shows OpenAI/Anthropic — details element, auto-opens when advanced provider active
+- [x] F4. Banner appears on fridge page without provider, disappears with provider — SetupBanner server component
 
 ---
 
