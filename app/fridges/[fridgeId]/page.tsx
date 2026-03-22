@@ -13,7 +13,9 @@ import { listPendingDrafts, listInventoryItems } from "@/lib/inventory/store";
 import { analyzeInventory, generateSuggestions } from "@/lib/inventory/analysis";
 import QrCode from "@/components/QrCode";
 import { resolveQrBaseUrl } from "@/lib/qr/origin";
+import { getActiveProvider } from "@/lib/settings/store";
 import IntakeSection from "./IntakeSection";
+import SetupBanner from "./SetupBanner";
 import InventorySection from "./InventorySection";
 import RecipeSection from "./RecipeSection";
 import QrSection from "./QrSection";
@@ -235,6 +237,8 @@ export default async function FridgeContextPage({ params }: Props) {
           </div>
         </div>
       </QrSection>
+
+      <SetupBanner hasProvider={!!getActiveProvider()} />
 
       <IntakeSection fridgeId={fridge.id} storageType={fridge.type} />
 
