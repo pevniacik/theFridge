@@ -17,9 +17,17 @@ npm run dev
 
 Notes:
 - Dev server auto-falls back from port 3000 if occupied.
-- `OPENAI_API_KEY` is optional; intake extraction uses deterministic stub data when missing.
+- AI extraction uses a deterministic stub until you configure a provider in Settings.
 - `QR_BASE_URL` is optional; use it to force QR links to a LAN-reachable origin.
 - SQLite database is created automatically at `data/fridges.db`.
+
+## Quick AI Setup (Free)
+
+1. Go to [aistudio.google.com/apikey](https://aistudio.google.com/apikey) and sign in with your Google account.
+2. Click **Create API key** — takes about 10 seconds.
+3. Open the app, go to **Settings**, paste the key, and save.
+
+That's it. Google AI Studio has a generous free tier — no billing required.
 
 Production-style local run:
 

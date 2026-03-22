@@ -5,28 +5,30 @@ import { saveProvider } from "./actions";
 import type { LlmProvider } from "@/lib/settings/types";
 
 const DEFAULT_MODELS: Record<LlmProvider, string> = {
+  google: "gemini-2.0-flash",
   openai: "gpt-4o-mini",
   anthropic: "claude-sonnet-4-20250514",
-  google: "gemini-2.0-flash",
 };
 
 const PROVIDER_KEY_URLS: Record<LlmProvider, string> = {
+  google: "https://aistudio.google.com/apikey",
   openai: "https://platform.openai.com/api-keys",
   anthropic: "https://console.anthropic.com/settings/keys",
-  google: "https://aistudio.google.com/apikey",
 };
 
 const PROVIDER_LABELS: Record<LlmProvider, string> = {
+  google: "Google AI Studio",
   openai: "OpenAI",
   anthropic: "Anthropic",
-  google: "Google",
 };
 
 const POPULAR_MODELS: Record<LlmProvider, string[]> = {
+  google: ["gemini-2.0-flash", "gemini-2.5-pro", "gemini-2.5-flash"],
   openai: ["gpt-4o-mini", "gpt-4o", "gpt-4-turbo", "o3-mini"],
   anthropic: ["claude-sonnet-4-20250514", "claude-haiku-3-5-20241022", "claude-opus-4-20250514"],
-  google: ["gemini-2.0-flash", "gemini-2.5-pro", "gemini-2.5-flash"],
 };
+
+const ADVANCED_PROVIDERS: LlmProvider[] = ["openai", "anthropic"];
 
 type MaskedConfig = {
   provider: LlmProvider;
@@ -42,7 +44,7 @@ const inputStyle: React.CSSProperties = {
   border: "1px solid var(--color-border)",
   borderRadius: "var(--radius-input, 0.375rem)",
   color: "var(--color-text)",
-  fontSize: "0.9375rem",
+  fontSize: "16px",
   fontFamily: "var(--font-body)",
   boxSizing: "border-box",
   outline: "none",
@@ -61,7 +63,7 @@ const labelStyle: React.CSSProperties = {
 export default function SettingsForm({ currentConfig }: { currentConfig: MaskedConfig }) {
   const [state, formAction, isPending] = useActionState(saveProvider, null);
 
-  const initialProvider: LlmProvider = currentConfig?.provider ?? "openai";
+  const initialProvider: LlmProvider = currentConfig?.provider ?? "google";
   const [selectedProvider, setSelectedProvider] = useState<LlmProvider>(initialProvider);
   const [model, setModel] = useState(currentConfig?.model ?? DEFAULT_MODELS[initialProvider]);
   const [clipboardError, setClipboardError] = useState<string | null>(null);
@@ -85,12 +87,125 @@ export default function SettingsForm({ currentConfig }: { currentConfig: MaskedC
     }
   }
 
+  const isAdvancedSelected = ADVANCED_PROVIDERS.includes(selectedProvider);
+
   return (
     <form action={formAction} style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-      <div>
-        <span style={labelStyle}>AI Provider</span>
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-          {(["openai", "anthropic", "google"] as LlmProvider[]).map((p) => (
+
+      <div
+        style={{
+          padding: "1rem",
+          border: `1px solid ${selectedProvider === "google" ? "var(--color-cold)" : "var(--color-border)"}`,
+          borderRadius: "var(--radius-card)",
+          background: selectedProvider === "google" ? "var(--color-cold-dim)" : "transparent",
+          transition: "border-color 150ms ease, background 150ms ease",
+        }}
+      >
+        <label
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: "0.75rem",
+            cursor: "pointer",
+          }}
+        >
+          <input
+            type="radio"
+            name="provider"
+            value="google"
+            checked={selectedProvider === "google"}
+            onChange={() => handleProviderChange("google")}
+            style={{
+              width: "1.125rem",
+              height: "1.125rem",
+              marginTop: "0.125rem",
+              cursor: "pointer",
+              accentColor: "var(--color-cold)",
+              flexShrink: 0,
+            }}
+          />
+          <div style={{ flex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
+              <span style={{ fontFamily: "var(--font-display)", fontSize: "0.9375rem", color: "var(--color-text)" }}>
+                Google AI Studio
+              </span>
+              <span
+                style={{
+                  fontSize: "0.625rem",
+                  fontFamily: "var(--font-display)",
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  color: "var(--color-cold)",
+                  border: "1px solid var(--color-cold)",
+                  borderRadius: "0.25rem",
+                  padding: "0.125rem 0.375rem",
+                }}
+              >
+                free
+              </span>
+            </div>
+            <p style={{ fontSize: "0.8125rem", color: "var(--color-muted)", lineHeight: 1.5, margin: 0 }}>
+              Use your Google account. Generous free limits — no billing required.
+            </p>
+          </div>
+        </label>
+      </div>
+
+      <details
+        open={isAdvancedSelected}
+        style={{ borderRadius: "var(--radius-card)" }}
+      >
+        <summary
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+            cursor: "pointer",
+            listStyle: "none",
+            fontSize: "0.8125rem",
+            fontFamily: "var(--font-display)",
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            color: isAdvancedSelected ? "var(--color-accent)" : "var(--color-muted)",
+            padding: "0.5rem 0",
+            minHeight: "44px",
+            userSelect: "none",
+          }}
+        >
+          <span style={{ fontSize: "0.625rem" }}>▶</span>
+          <span>Advanced Providers</span>
+          {isAdvancedSelected && (
+            <span
+              style={{
+                fontSize: "0.625rem",
+                fontFamily: "var(--font-display)",
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                color: "var(--color-accent)",
+                border: "1px solid var(--color-accent)",
+                borderRadius: "0.25rem",
+                padding: "0.125rem 0.375rem",
+              }}
+            >
+              active
+            </span>
+          )}
+        </summary>
+
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "0.5rem",
+            paddingTop: "0.75rem",
+            borderTop: "1px solid var(--color-border)",
+            marginTop: "0.25rem",
+          }}
+        >
+          <p style={{ fontSize: "0.8125rem", color: "var(--color-muted)", lineHeight: 1.5, marginBottom: "0.25rem" }}>
+            Requires a paid API key from the provider. Use if you already have an existing subscription.
+          </p>
+          {ADVANCED_PROVIDERS.map((p) => (
             <label
               key={p}
               style={{
@@ -110,15 +225,18 @@ export default function SettingsForm({ currentConfig }: { currentConfig: MaskedC
                 value={p}
                 checked={selectedProvider === p}
                 onChange={() => handleProviderChange(p)}
-                style={{ width: "1.125rem", height: "1.125rem", cursor: "pointer", accentColor: "var(--color-accent)" }}
+                style={{
+                  width: "1.125rem",
+                  height: "1.125rem",
+                  cursor: "pointer",
+                  accentColor: "var(--color-accent)",
+                }}
               />
-              <span style={{ fontFamily: "var(--font-body)" }}>
-                {PROVIDER_LABELS[p]}
-              </span>
+              <span style={{ fontFamily: "var(--font-body)" }}>{PROVIDER_LABELS[p]}</span>
             </label>
           ))}
         </div>
-      </div>
+      </details>
 
       <div>
         <label htmlFor="settings-model" style={labelStyle}>
@@ -131,7 +249,7 @@ export default function SettingsForm({ currentConfig }: { currentConfig: MaskedC
           list="model-options"
           value={model}
           onChange={(e) => setModel(e.target.value)}
-          placeholder="e.g. gpt-4o-mini"
+          placeholder={`e.g. ${DEFAULT_MODELS[selectedProvider]}`}
           style={inputStyle}
           autoComplete="off"
         />
@@ -181,7 +299,7 @@ export default function SettingsForm({ currentConfig }: { currentConfig: MaskedC
             id="settings-api-key"
             name="api_key"
             type="password"
-            placeholder={currentConfig?.api_key_masked ? "Enter new key to replace" : "Enter API key"}
+            placeholder={currentConfig?.api_key_masked ? "Enter new key to replace" : "Paste your API key"}
             style={{ ...inputStyle, flex: 1 }}
             autoComplete="new-password"
           />
