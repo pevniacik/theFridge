@@ -126,6 +126,13 @@ npm run lint         # Next.js linting
 npm run type-check   # tsc --noEmit
 ```
 
+## GIT WORKFLOW POLICY
+
+- Create a feature branch for every change; do not develop directly on `main`.
+- Push the feature branch and open a PR targeting `main`.
+- PR description must include what changed, why, files/modules touched, and verification evidence.
+- Merge to `main` only through PR review flow (except urgent hotfixes).
+
 ## NOTES
 
 - **No tests** — codebase is architecturally testable (pure functions accept `now: Date`, stub fallback for AI) but no test framework installed
