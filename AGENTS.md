@@ -110,7 +110,7 @@ theFridge/
 
 - **`request.formData()` throws** on empty/malformed multipart bodies — wrap in try/catch, return 400 (D015)
 - **Next.js 15 params are async** — `await params` in page/layout components
-- **QR URLs baked at generation time** — if LAN IP/port changes, QR codes go stale; regenerate by reloading context page
+- **QR URLs baked at generation time** — if LAN IP/port changes, QR codes go stale; regenerate by reloading context page. If host headers are rewritten, set `QR_BASE_URL` to force QR origin.
 - **`useActionState` requires `(prevState, formData)` signature** — missing prevState param causes TypeScript error
 - **Next.js dev server picks alternate port silently** when 3000 is occupied
 - **SQLite INTEGER 0/1 → boolean** coerced at store read boundary; no casting in components (D018)
@@ -132,5 +132,5 @@ npm run type-check   # tsc --noEmit
 - **No CI/CD** — manual build/deploy only
 - **S01-S04 complete**, S05 (status/alerts/cooking suggestions) in progress
 - **M002 planned** — public web deployment (future milestone)
-- **Env vars**: `OPENAI_API_KEY` optional — extraction falls back to deterministic stub without it
+- **Env vars**: `OPENAI_API_KEY` optional — extraction falls back to deterministic stub without it; `QR_BASE_URL` optional override for generated QR destination origin
 - **Project decisions**: `.gsd/DECISIONS.md` is the source of truth (22 decisions, append-only)

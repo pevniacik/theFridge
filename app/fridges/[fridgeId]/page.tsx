@@ -12,6 +12,7 @@ import { getFridgeById } from "@/lib/fridges/store";
 import { listPendingDrafts, listInventoryItems } from "@/lib/inventory/store";
 import { analyzeInventory, generateSuggestions } from "@/lib/inventory/analysis";
 import QrCode from "@/components/QrCode";
+import { resolveQrBaseUrl } from "@/lib/qr/origin";
 import IntakeSection from "./IntakeSection";
 import InventorySection from "./InventorySection";
 import RecipeSection from "./RecipeSection";
@@ -23,9 +24,7 @@ interface Props {
 /** Derive the app's base URL for QR code generation. */
 async function getBaseUrl(): Promise<string> {
   const hdrs = await headers();
-  const host = hdrs.get("host") ?? "localhost:3000";
-  const proto = hdrs.get("x-forwarded-proto") ?? "http";
-  return `${proto}://${host}`;
+  return resolveQrBaseUrl(hdrs, process.env.QR_BASE_URL ?? null);
 }
 
 export default async function FridgeContextPage({ params }: Props) {

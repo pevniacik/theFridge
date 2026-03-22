@@ -18,6 +18,7 @@ npm run dev
 Notes:
 - Dev server auto-falls back from port 3000 if occupied.
 - `OPENAI_API_KEY` is optional; intake extraction uses deterministic stub data when missing.
+- `QR_BASE_URL` is optional; use it to force QR links to a LAN-reachable origin.
 - SQLite database is created automatically at `data/fridges.db`.
 
 Production-style local run:
@@ -46,19 +47,20 @@ App URL:
 
 Home-network access:
 - Open the app from another device using `http://<your-lan-ip>:3000`
-- Generate/print QR codes while visiting via the LAN address, not `localhost`
-- If you generate QRs on `localhost`, scans from phones/tablets will point to `localhost` and fail
+- QR origin is resolved from forwarded host/proto headers first, then request host
+- If QR still points to `localhost`, set `QR_BASE_URL=http://<your-lan-ip>:3000`
 
 Persistence:
 - SQLite data is stored in Docker volume `thefridge_data` mounted to `/app/data`.
 
 Optional environment variable:
 - `OPENAI_API_KEY`
+- `QR_BASE_URL` (forces generated QR destination origin)
 
 Example:
 
 ```bash
-OPENAI_API_KEY=your_key docker compose up --build
+OPENAI_API_KEY=your_key QR_BASE_URL=http://192.168.1.22:3000 docker compose up --build
 ```
 
 Copy env file first if you want real AI extraction:
@@ -104,9 +106,18 @@ The compose setup includes:
 ## Network + QR Rules
 
 - Access from other devices using `http://<your-lan-ip>:3000`
-- Generate/print QR codes while browsing via the LAN URL
-- If QR codes are generated from `localhost`, phone scans will fail
+- QR generation uses this precedence: `QR_BASE_URL` -> `x-forwarded-host`/`x-forwarded-proto` -> request `host`
+- If phone scans still fail due `localhost` links, set `QR_BASE_URL` and restart app
 - If server IP/port changes, regenerate and reprint QR codes
+
+## QR Troubleshooting (Phone Scans)
+
+If scanning a QR opens `localhost` instead of your server IP:
+
+1. Confirm phone and server are on the same LAN.
+2. Open the app from phone directly using `http://<your-lan-ip>:<port>`.
+3. Set `QR_BASE_URL=http://<your-lan-ip>:<port>` in `.env`.
+4. Restart the app and regenerate/reprint QR labels.
 
 ## Backup and Restore
 
