@@ -63,6 +63,41 @@ export default async function SettingsPage() {
           Google AI Studio is recommended — free with your Google account, no billing required.
           Your API key is stored locally and never shared.
         </p>
+
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "0.5rem",
+            marginTop: "0.875rem",
+            padding: "0.375rem 0.75rem",
+            borderRadius: "var(--radius-card)",
+            background: currentConfig ? "var(--color-cold-dim)" : "color-mix(in srgb, #f87171 12%, transparent)",
+            border: `1px solid ${currentConfig ? "var(--color-cold)" : "#f87171"}`,
+          }}
+        >
+          <span
+            style={{
+              width: "0.5rem",
+              height: "0.5rem",
+              borderRadius: "50%",
+              background: currentConfig ? "var(--color-cold)" : "#f87171",
+              flexShrink: 0,
+            }}
+          />
+          <span
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "0.75rem",
+              letterSpacing: "0.04em",
+              color: currentConfig ? "var(--color-cold)" : "#f87171",
+            }}
+          >
+            {currentConfig
+              ? `Active: ${currentConfig.provider === "google" ? "Google AI Studio" : currentConfig.provider === "openai" ? "OpenAI" : "Anthropic"} · ${currentConfig.model}`
+              : "No provider configured"}
+          </span>
+        </div>
       </div>
 
       <div
@@ -77,7 +112,7 @@ export default async function SettingsPage() {
       </div>
 
       <div style={{ marginTop: "2rem" }}>
-        <Link href="/" style={{ fontSize: "0.875rem", color: "var(--color-muted)", textDecoration: "none" }}>
+        <Link href="/fridges" style={{ fontSize: "0.875rem", color: "var(--color-muted)", textDecoration: "none" }}>
           ← Back to overview
         </Link>
       </div>
