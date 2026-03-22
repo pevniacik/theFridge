@@ -139,5 +139,6 @@ npm run type-check   # tsc --noEmit
 - **No CI/CD** — manual build/deploy only
 - **S01-S04 complete**, S05 (status/alerts/cooking suggestions) in progress
 - **M002 planned** — public web deployment (future milestone)
-- **Env vars**: `OPENAI_API_KEY` optional — extraction falls back to deterministic stub without it; `QR_BASE_URL` optional override for generated QR destination origin
+- **Env vars**: `GOOGLE_AI_API_KEY` recommended (free via Google AI Studio at aistudio.google.com/apikey); `OPENAI_API_KEY` optional (paid, advanced); `QR_BASE_URL` optional override for generated QR destination origin. All configured via Settings UI — env vars are for reference only.
+- **AI provider default**: Google AI Studio (free). OpenAI/Anthropic available under "Advanced Providers" in settings.
 - **Project decisions**: `.gsd/DECISIONS.md` is the source of truth (22 decisions, append-only)
