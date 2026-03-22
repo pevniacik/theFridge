@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.gsd/worktrees
+.gsd/runtime
+.gsd/activity
+.bg-shell
+data
+.env
+.env.*
+npm-debug.log*
+*.log
+test-photo.jpg
+.DS_Store
