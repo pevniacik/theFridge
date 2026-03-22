@@ -56,7 +56,7 @@ describe("AnthropicProvider", () => {
     });
   });
 
-  it("returns empty array when provider returns non-text content", async () => {
+  it("throws when provider returns non-text content (parse error surfaces to caller)", async () => {
     createMessageMock.mockResolvedValue({
       content: [{ type: "tool_use", id: "tool_1", name: "noop", input: {} }],
     });
@@ -65,8 +65,9 @@ describe("AnthropicProvider", () => {
       "sk-anthropic",
       "claude-3-5-sonnet-latest"
     );
-    const result = await provider.extract("base64-image", "image/png");
 
-    expect(result).toEqual([]);
+    await expect(provider.extract("base64-image", "image/png")).rejects.toThrow(
+      "Anthropic extraction failed"
+    );
   });
 });

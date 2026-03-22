@@ -78,8 +78,9 @@ export class OpenAIProvider implements ExtractionProvider {
           };
         });
     } catch (err) {
-      console.error("[intake] Extraction failed:", err);
-      return [];
+      console.error("[intake] OpenAI extraction failed:", err);
+      const message = err instanceof Error ? err.message : String(err);
+      throw new Error(`OpenAI extraction failed: ${message}`);
     }
   }
 }

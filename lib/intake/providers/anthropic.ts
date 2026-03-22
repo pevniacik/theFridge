@@ -96,7 +96,8 @@ export class AnthropicProvider implements ExtractionProvider {
         });
     } catch (err) {
       console.error("[intake] Anthropic extraction failed:", err);
-      return [];
+      const message = err instanceof Error ? err.message : String(err);
+      throw new Error(`Anthropic extraction failed: ${message}`);
     }
   }
 }
