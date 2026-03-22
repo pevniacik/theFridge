@@ -14,7 +14,7 @@ export default async function SettingsPage() {
       style={{
         maxWidth: "40rem",
         margin: "0 auto",
-        padding: "3rem 1.5rem",
+        padding: "clamp(1rem, 4vw, 3rem) clamp(1rem, 4vw, 1.5rem)",
       }}
     >
       <nav
@@ -67,10 +67,10 @@ export default async function SettingsPage() {
 
       <div
         style={{
-          padding: "2rem",
-          background: "var(--color-panel)",
-          border: "1px solid var(--color-border)",
-          borderRadius: "var(--radius-card)",
+        padding: "clamp(1rem, 4vw, 2rem)",
+        background: "var(--color-panel)",
+        border: "1px solid var(--color-border)",
+        borderRadius: "var(--radius-card)",
         }}
       >
         <SettingsForm currentConfig={currentConfig} />
