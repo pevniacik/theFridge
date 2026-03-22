@@ -2,6 +2,10 @@
 # ── GSD baseline (auto-generated) ──
 # .gsd is intentionally tracked — contains project plans, decisions, and state
 # .gsd
+.gsd/activity/
+.gsd/runtime/
+.gsd/worktrees/
+backups/
 .DS_Store
 Thumbs.db
 *.swp
