@@ -16,6 +16,7 @@ import { resolveQrBaseUrl } from "@/lib/qr/origin";
 import IntakeSection from "./IntakeSection";
 import InventorySection from "./InventorySection";
 import RecipeSection from "./RecipeSection";
+import QrSection from "./QrSection";
 
 interface Props {
   params: Promise<{ fridgeId: string }>;
@@ -127,7 +128,7 @@ export default async function FridgeContextPage({ params }: Props) {
       style={{
         maxWidth: "52rem",
         margin: "0 auto",
-        padding: "3rem 1.5rem",
+        padding: "clamp(1rem, 4vw, 3rem) clamp(1rem, 4vw, 1.5rem)",
       }}
     >
       {/* Breadcrumb */}
@@ -188,66 +189,52 @@ export default async function FridgeContextPage({ params }: Props) {
         </p>
       </div>
 
-      {/* QR code + instructions */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "auto 1fr",
-          gap: "2rem",
-          alignItems: "start",
-          padding: "1.5rem",
-          background: "var(--color-panel)",
-          border: "1px solid var(--color-border)",
-          borderRadius: "var(--radius-card)",
-          marginBottom: "2rem",
-        }}
-      >
-        <div>
-          <p
-            style={{
-              fontFamily: "var(--font-display)",
-              fontSize: "0.6875rem",
-              letterSpacing: "0.15em",
-              textTransform: "uppercase",
-              color: "var(--color-cold)",
-              marginBottom: "1rem",
-            }}
-          >
-            printable QR
-          </p>
-          <QrCode baseUrl={baseUrl} fridgeId={fridge.id} size={180} />
-        </div>
+      {/* QR code + instructions (collapsible on mobile) */}
+      <QrSection>
+        <div
+          className="qr-grid"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "auto 1fr",
+            gap: "2rem",
+            alignItems: "start",
+          }}
+        >
+          <div>
+            <QrCode baseUrl={baseUrl} fridgeId={fridge.id} size={180} />
+          </div>
 
-        <div>
-          <p
-            style={{
-              fontFamily: "var(--font-display)",
-              fontSize: "0.6875rem",
-              letterSpacing: "0.15em",
-              textTransform: "uppercase",
-              color: "var(--color-cold)",
-              marginBottom: "0.75rem",
-            }}
-          >
-            instructions
-          </p>
-          <ol
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "0.625rem",
-              paddingLeft: "1.25rem",
-              fontSize: "0.875rem",
-              color: "var(--color-muted)",
-              lineHeight: 1.6,
-            }}
-          >
-            <li>Print this page (Ctrl/Cmd + P) or screenshot the QR code.</li>
-            <li>Stick the label on the door of <strong style={{ color: "var(--color-text)" }}>{fridge.name}</strong>.</li>
-            <li>Scan with any phone on the same network to open this page instantly.</li>
-          </ol>
+          <div>
+            <p
+              style={{
+                fontFamily: "var(--font-display)",
+                fontSize: "0.6875rem",
+                letterSpacing: "0.15em",
+                textTransform: "uppercase",
+                color: "var(--color-cold)",
+                marginBottom: "0.75rem",
+              }}
+            >
+              instructions
+            </p>
+            <ol
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.625rem",
+                paddingLeft: "1.25rem",
+                fontSize: "0.875rem",
+                color: "var(--color-muted)",
+                lineHeight: 1.6,
+              }}
+            >
+              <li>Print this page (Ctrl/Cmd + P) or screenshot the QR code.</li>
+              <li>Stick the label on the door of <strong style={{ color: "var(--color-text)" }}>{fridge.name}</strong>.</li>
+              <li>Scan with any phone on the same network to open this page instantly.</li>
+            </ol>
+          </div>
         </div>
-      </div>
+      </QrSection>
 
       <IntakeSection fridgeId={fridge.id} storageType={fridge.type} />
 

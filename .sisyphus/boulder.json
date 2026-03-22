@@ -1,27 +1,9 @@
 {
-  "active_plan": "/Users/robertpevny/theFridge/.sisyphus/plans/mobile-first-ai-fridge.md",
-  "started_at": "2026-03-21T16:17:25.234Z",
+  "active_plan": "/Users/robertpevny/theFridge/.sisyphus/plans/responsive-qr-settings.md",
+  "started_at": "2026-03-22T09:24:54.289Z",
   "session_ids": [
-    "ses_2f0882d6effejbYyF2VgM4aBFV",
-    "ses_2eececc74ffelEQcGlM4PsjAia",
-    "ses_2eecc9670ffeU4a7Ldjsp8qoeb",
-    "ses_2eecc5090ffeVrY5BLVL3skCSh",
-    "ses_2eec490f3ffeY3sVQ6riqQt4LI",
-    "ses_2eec4ce28ffeAt7R9e9t27SNOs",
-    "ses_2eec5089bffeony2lP5rBpVe4r",
-    "ses_2eebdda00ffetBLH5Dd2S7rgJo",
-    "ses_2eebd99c0ffegkLbwvut1fPjAF",
-    "ses_2eebe6199ffeqjRaw5GCvgYqHu",
-    "ses_2eebe0875ffecQJl7kesn6gsBt",
-    "ses_2eeb87431ffeuAasrJEOPLMrl4",
-    "ses_2eeb83ed0ffeIFYViQtcoco2oc",
-    "ses_2eeb8b9bdffessxJJ9W3bjbBkC",
-    "ses_2eeb1fd33ffe4qg0S03LnQRdIR",
-    "ses_2eeb1d33affeBw2lCPXf3BVYyH",
-    "ses_2eeb16bccffezfze2xhzJAwaDE",
-    "ses_2eea9facdffel1cD2ZIji0KEwo",
-    "ses_2edf84d3bffepPGA45AnhX0aNd"
+    "ses_2f0882d6effejbYyF2VgM4aBFV"
   ],
-  "plan_name": "mobile-first-ai-fridge",
+  "plan_name": "responsive-qr-settings",
   "agent": "atlas"
 }

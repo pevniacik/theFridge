@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { saveProvider } from "./actions";
 import type { LlmProvider } from "@/lib/settings/types";
 
@@ -8,6 +8,24 @@ const DEFAULT_MODELS: Record<LlmProvider, string> = {
   openai: "gpt-4o-mini",
   anthropic: "claude-sonnet-4-20250514",
   google: "gemini-2.0-flash",
+};
+
+const PROVIDER_KEY_URLS: Record<LlmProvider, string> = {
+  openai: "https://platform.openai.com/api-keys",
+  anthropic: "https://console.anthropic.com/settings/keys",
+  google: "https://aistudio.google.com/apikey",
+};
+
+const PROVIDER_LABELS: Record<LlmProvider, string> = {
+  openai: "OpenAI",
+  anthropic: "Anthropic",
+  google: "Google",
+};
+
+const POPULAR_MODELS: Record<LlmProvider, string[]> = {
+  openai: ["gpt-4o-mini", "gpt-4o", "gpt-4-turbo", "o3-mini"],
+  anthropic: ["claude-sonnet-4-20250514", "claude-haiku-3-5-20241022", "claude-opus-4-20250514"],
+  google: ["gemini-2.0-flash", "gemini-2.5-pro", "gemini-2.5-flash"],
 };
 
 type MaskedConfig = {
@@ -46,10 +64,25 @@ export default function SettingsForm({ currentConfig }: { currentConfig: MaskedC
   const initialProvider: LlmProvider = currentConfig?.provider ?? "openai";
   const [selectedProvider, setSelectedProvider] = useState<LlmProvider>(initialProvider);
   const [model, setModel] = useState(currentConfig?.model ?? DEFAULT_MODELS[initialProvider]);
+  const [clipboardError, setClipboardError] = useState<string | null>(null);
+  const apiKeyRef = useRef<HTMLInputElement>(null);
 
   function handleProviderChange(p: LlmProvider) {
     setSelectedProvider(p);
     setModel(DEFAULT_MODELS[p]);
+  }
+
+  async function handlePaste() {
+    setClipboardError(null);
+    try {
+      const text = await navigator.clipboard.readText();
+      if (apiKeyRef.current) {
+        apiKeyRef.current.value = text.trim();
+      }
+    } catch {
+      setClipboardError("Clipboard access denied. Paste manually with Ctrl/Cmd+V.");
+      setTimeout(() => setClipboardError(null), 4000);
+    }
   }
 
   return (
@@ -80,7 +113,7 @@ export default function SettingsForm({ currentConfig }: { currentConfig: MaskedC
                 style={{ width: "1.125rem", height: "1.125rem", cursor: "pointer", accentColor: "var(--color-accent)" }}
               />
               <span style={{ fontFamily: "var(--font-body)" }}>
-                {p === "openai" ? "OpenAI" : p === "anthropic" ? "Anthropic" : "Google"}
+                {PROVIDER_LABELS[p]}
               </span>
             </label>
           ))}
@@ -95,18 +128,41 @@ export default function SettingsForm({ currentConfig }: { currentConfig: MaskedC
           id="settings-model"
           name="model"
           type="text"
+          list="model-options"
           value={model}
           onChange={(e) => setModel(e.target.value)}
           placeholder="e.g. gpt-4o-mini"
           style={inputStyle}
           autoComplete="off"
         />
+        <datalist id="model-options">
+          {POPULAR_MODELS[selectedProvider].map((m) => (
+            <option key={m} value={m} />
+          ))}
+        </datalist>
       </div>
 
       <div>
         <label htmlFor="settings-api-key" style={labelStyle}>
           API Key
         </label>
+        <a
+          href={PROVIDER_KEY_URLS[selectedProvider]}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: "inline-block",
+            fontSize: "0.75rem",
+            fontFamily: "var(--font-display)",
+            color: "var(--color-cold)",
+            textDecoration: "underline",
+            textDecorationColor: "var(--color-border)",
+            marginBottom: "0.5rem",
+            letterSpacing: "0.03em",
+          }}
+        >
+          Get {PROVIDER_LABELS[selectedProvider]} API key ↗
+        </a>
         {currentConfig?.api_key_masked && (
           <p
             style={{
@@ -119,14 +175,50 @@ export default function SettingsForm({ currentConfig }: { currentConfig: MaskedC
             Current: {currentConfig.api_key_masked}
           </p>
         )}
-        <input
-          id="settings-api-key"
-          name="api_key"
-          type="password"
-          placeholder={currentConfig?.api_key_masked ? "Enter new key to replace" : "Enter API key"}
-          style={inputStyle}
-          autoComplete="new-password"
-        />
+        <div style={{ display: "flex", gap: "0.5rem", alignItems: "stretch" }}>
+          <input
+            ref={apiKeyRef}
+            id="settings-api-key"
+            name="api_key"
+            type="password"
+            placeholder={currentConfig?.api_key_masked ? "Enter new key to replace" : "Enter API key"}
+            style={{ ...inputStyle, flex: 1 }}
+            autoComplete="new-password"
+          />
+          <button
+            type="button"
+            onClick={handlePaste}
+            style={{
+              minHeight: "44px",
+              padding: "0 0.875rem",
+              background: "transparent",
+              border: "1px solid var(--color-cold)",
+              borderRadius: "var(--radius-input, 0.375rem)",
+              color: "var(--color-cold)",
+              fontSize: "0.75rem",
+              fontFamily: "var(--font-display)",
+              letterSpacing: "0.05em",
+              cursor: "pointer",
+              touchAction: "manipulation",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+            }}
+          >
+            Paste
+          </button>
+        </div>
+        {clipboardError && (
+          <p
+            style={{
+              fontSize: "0.75rem",
+              color: "#f87171",
+              marginTop: "0.375rem",
+              lineHeight: 1.4,
+            }}
+          >
+            {clipboardError}
+          </p>
+        )}
       </div>
 
       {state && !state.success && state.error && (
