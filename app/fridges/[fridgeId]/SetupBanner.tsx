@@ -2,10 +2,61 @@ import Link from "next/link";
 
 interface Props {
   hasProvider: boolean;
+  providerLabel?: string;
+  model?: string;
 }
 
-export default function SetupBanner({ hasProvider }: Props) {
-  if (hasProvider) return null;
+export default function SetupBanner({ hasProvider, providerLabel, model }: Props) {
+  if (hasProvider) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "0.5rem",
+          marginBottom: "1.5rem",
+          padding: "0.5rem 0.875rem",
+          background: "var(--color-cold-dim)",
+          border: "1px solid var(--color-cold)",
+          borderRadius: "var(--radius-card)",
+          flexWrap: "wrap",
+        }}
+      >
+        <span
+          style={{
+            width: "0.5rem",
+            height: "0.5rem",
+            borderRadius: "50%",
+            background: "var(--color-cold)",
+            flexShrink: 0,
+          }}
+        />
+        <span
+          style={{
+            fontFamily: "var(--font-display)",
+            fontSize: "0.75rem",
+            letterSpacing: "0.04em",
+            color: "var(--color-cold)",
+          }}
+        >
+          AI: {providerLabel ?? "configured"}{model ? ` · ${model}` : ""}
+        </span>
+        <Link
+          href="/settings"
+          style={{
+            marginLeft: "auto",
+            fontSize: "0.75rem",
+            fontFamily: "var(--font-display)",
+            color: "var(--color-muted)",
+            textDecoration: "none",
+            letterSpacing: "0.04em",
+          }}
+        >
+          change ↗
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div
