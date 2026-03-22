@@ -60,7 +60,7 @@ export default async function SettingsPage() {
           AI Provider Settings
         </h1>
         <p style={{ fontSize: "0.9375rem", color: "var(--color-muted)", lineHeight: 1.6 }}>
-          Configure the AI provider used for photo-based ingredient extraction.
+          Google AI Studio is recommended — free with your Google account, no billing required.
           Your API key is stored locally and never shared.
         </p>
       </div>
