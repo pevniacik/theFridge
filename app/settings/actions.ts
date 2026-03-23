@@ -28,16 +28,24 @@ export async function saveProvider(
     return { success: false, error: `Invalid provider: ${provider}. Must be one of: openai, anthropic, google.` };
   }
 
-  if (!api_key || api_key.trim().length === 0) {
-    return { success: false, error: "API key cannot be empty." };
-  }
-
   if (!model || model.trim().length === 0) {
     return { success: false, error: "Model cannot be empty." };
   }
 
+  const trimmedKey = api_key?.trim() ?? "";
+  let resolvedKey = trimmedKey;
+
+  if (!resolvedKey) {
+    const existing = getActiveProvider();
+    if (existing?.provider === provider) {
+      resolvedKey = existing.api_key;
+    } else {
+      return { success: false, error: "API key is required when configuring a new provider." };
+    }
+  }
+
   try {
-    upsertProvider({ provider: provider as LlmProvider, api_key: api_key.trim(), model: model.trim() });
+    upsertProvider({ provider: provider as LlmProvider, api_key: resolvedKey, model: model.trim() });
     console.log(`[settings] Saved provider config for ${provider}`);
     return { success: true };
   } catch (err) {

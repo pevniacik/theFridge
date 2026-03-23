@@ -116,6 +116,12 @@ export default async function FridgeContextPage({ params }: Props) {
   const typeColor = fridge.type === "fridge" ? "var(--color-cold)" : "#a78bfa";
   const pendingDrafts = listPendingDrafts(fridge.id);
   const inventoryItems = listInventoryItems(fridge.id);
+  const activeProvider = getActiveProvider();
+  const providerLabelMap: Record<string, string> = {
+    google: "Google AI Studio",
+    openai: "OpenAI",
+    anthropic: "Anthropic",
+  };
 
   // ── Server-side analysis (S05) ────────────────────────────────────────────
   // analyzeInventory and generateSuggestions are pure synchronous functions
@@ -238,7 +244,11 @@ export default async function FridgeContextPage({ params }: Props) {
         </div>
       </QrSection>
 
-      <SetupBanner hasProvider={!!getActiveProvider()} />
+      <SetupBanner
+        hasProvider={!!activeProvider}
+        providerLabel={activeProvider ? providerLabelMap[activeProvider.provider] : undefined}
+        model={activeProvider?.model}
+      />
 
       <IntakeSection fridgeId={fridge.id} storageType={fridge.type} />
 
@@ -253,7 +263,7 @@ export default async function FridgeContextPage({ params }: Props) {
 
       {/* Actions */}
       <div style={{ marginTop: "2rem", display: "flex", gap: "1rem", alignItems: "center" }}>
-        <Link href="/" style={{ fontSize: "0.875rem", color: "var(--color-muted)", textDecoration: "none" }}>
+        <Link href="/fridges" style={{ fontSize: "0.875rem", color: "var(--color-muted)", textDecoration: "none" }}>
           ← Back to overview
         </Link>
         <Link

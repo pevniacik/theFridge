@@ -72,8 +72,9 @@ export class GoogleProvider implements ExtractionProvider {
           };
         });
     } catch (err) {
-      console.error("[intake] Extraction failed:", err);
-      return [];
+      console.error("[intake] Google extraction failed:", err);
+      const message = err instanceof Error ? err.message : String(err);
+      throw new Error(`Google AI extraction failed: ${message}`);
     }
   }
 }

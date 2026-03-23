@@ -53,13 +53,22 @@ export async function POST(
   const buffer = Buffer.from(await file.arrayBuffer());
   const base64 = buffer.toString("base64");
 
-  // Run extraction (stub or OpenAI)
-  const items = await extractDraftFromImage(
-    base64,
-    file.type || "image/jpeg",
-    providerConfig,
-    source
-  );
+  let items;
+  try {
+    items = await extractDraftFromImage(
+      base64,
+      file.type || "image/jpeg",
+      providerConfig,
+      source
+    );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Extraction failed";
+    console.error("[intake] extractDraftFromImage threw:", message);
+    return NextResponse.json(
+      { items: [], error: message },
+      { status: 200 }
+    );
+  }
 
   return NextResponse.json({ items }, { status: 200 });
 }

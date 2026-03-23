@@ -1,9 +1,11 @@
 {
-  "active_plan": "/Users/robertpevny/theFridge/.sisyphus/plans/google-default-llm.md",
-  "started_at": "2026-03-22T18:09:18.948Z",
+  "active_plan": "/Users/robertpevny/theFridge/.sisyphus/plans/fix-settings-intake-nav.md",
+  "started_at": "2026-03-22T18:31:29.119Z",
   "session_ids": [
-    "ses_2f0882d6effejbYyF2VgM4aBFV"
+    "ses_2f0882d6effejbYyF2VgM4aBFV",
+    "ses_2e8f98c3bffeGUW1UfKYe7k9Sa",
+    "ses_2e651f528ffeWGF1k2AyPUtlWV"
   ],
-  "plan_name": "google-default-llm",
+  "plan_name": "fix-settings-intake-nav",
   "agent": "atlas"
 }

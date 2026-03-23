@@ -24,15 +24,17 @@ export function createTestDb(): Database.Database {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS intake_drafts (
-      id          TEXT PRIMARY KEY,
-      fridge_id   TEXT NOT NULL REFERENCES fridges(id),
-      name        TEXT NOT NULL,
-      quantity    TEXT NOT NULL DEFAULT '',
-      unit        TEXT NOT NULL DEFAULT '',
-      confidence  TEXT NOT NULL DEFAULT 'high',
-      status      TEXT NOT NULL DEFAULT 'pending'
-                 CHECK (status IN ('pending', 'confirmed', 'rejected')),
-      created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+      id                    TEXT PRIMARY KEY,
+      fridge_id             TEXT NOT NULL REFERENCES fridges(id),
+      name                  TEXT NOT NULL,
+      quantity              TEXT NOT NULL DEFAULT '',
+      unit                  TEXT NOT NULL DEFAULT '',
+      category              TEXT NOT NULL DEFAULT '',
+      confidence            TEXT NOT NULL DEFAULT 'high',
+      estimated_expiry_days INTEGER,
+      status                TEXT NOT NULL DEFAULT 'pending'
+                            CHECK (status IN ('pending', 'confirmed', 'rejected')),
+      created_at            TEXT NOT NULL DEFAULT (datetime('now'))
     );
   `);
 
@@ -44,9 +46,11 @@ export function createTestDb(): Database.Database {
       name             TEXT NOT NULL,
       quantity         TEXT NOT NULL DEFAULT '',
       unit             TEXT NOT NULL DEFAULT '',
+      category         TEXT NOT NULL DEFAULT '',
       confidence       TEXT NOT NULL DEFAULT 'high',
       expiry_date      TEXT,
       expiry_estimated INTEGER NOT NULL DEFAULT 0,
+      purchase_date    TEXT,
       status           TEXT NOT NULL DEFAULT 'active'
                        CHECK (status IN ('active', 'used', 'discarded')),
       added_at         TEXT NOT NULL DEFAULT (datetime('now')),
