@@ -128,10 +128,10 @@ npm run type-check   # tsc --noEmit
 
 ## GIT WORKFLOW POLICY
 
-- Create a feature branch for every change; do not develop directly on `main`.
-- Push the feature branch and open a PR targeting `main`.
-- PR description must include what changed, why, files/modules touched, and verification evidence.
-- Merge to `main` only through PR review flow (except urgent hotfixes).
+- Milestone, slice, and normal feature work should use a dedicated feature branch and PR into `main`.
+- Quick tasks may be completed directly on `main` when the task explicitly says direct-to-main work is allowed.
+- PR descriptions for branch-based work must include what changed, why, files/modules touched, and verification evidence.
+- Merge to `main` only through PR review flow unless the task explicitly authorizes direct-to-main work or it is an urgent hotfix.
 
 ## NOTES
 

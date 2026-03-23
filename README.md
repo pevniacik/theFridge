@@ -38,19 +38,19 @@ PORT=3005 npm start
 
 ## Development Workflow Policy (Required)
 
-Starting now, every change follows this workflow:
+By default:
 
-1. Create a dedicated feature branch (for example: `feat/receipt-qr-fix`, `fix/lan-qr-origin`).
-2. Push that feature branch to origin.
-3. Open a Pull Request into `main`.
-4. Include a detailed PR description covering:
+1. Milestone, slice, and normal feature work should happen on a dedicated feature branch.
+2. That branch should be pushed to origin.
+3. Changes should land in `main` through a Pull Request.
+4. PR descriptions should cover:
    - what changed,
    - why it changed,
    - files/modules touched,
    - verification performed (tests/build/manual checks),
    - any migration or rollout notes.
 
-Direct work on `main` should be avoided except emergency hotfixes.
+**Exception:** if a quick task explicitly says direct-to-`main` work is allowed, you may commit and push straight to `main` without creating a PR.
 
 ## Run Locally (Docker)
 
