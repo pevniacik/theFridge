@@ -57,7 +57,7 @@
   - Verify: `npm run test -- e2e/intake-flow.test.ts app/api/intake/[fridgeId]/route.test.ts`
   - Done when: a future agent can run one automated test target and see the assembled data path pass without relying on browser interaction
 
-- [ ] **T03: Capture live LAN acceptance for QR entry and cross-device usage** `est:1h`
+- [x] **T03: Capture live LAN acceptance for QR entry and cross-device usage** `est:1h`
   - Why: Automated tests cannot fully prove the real home-network entrypoint or printed/scanned QR behavior. S06 needs explicit live acceptance evidence for the milestone definition of done.
   - Files: `scripts/verify-s06-lan.sh`, `.gsd/milestones/M001/slices/S06/S06-UAT.md`, `.gsd/REQUIREMENTS.md`, `.gsd/milestones/M001/M001-SUMMARY.md`
   - Do: Write a reusable verification script that runs the mechanical LAN checks (localhost health, LAN-IP health, LAN fridge-page QR-origin grep, test/type-check/build); then run the real app on the LAN, exercise the fridge page over the LAN IP, perform the human-controlled QR/photo/update/suggestion acceptance loop, and record the results in S06-UAT and requirement/milestone summary artifacts; update R011 validation evidence with the actual LAN run results.

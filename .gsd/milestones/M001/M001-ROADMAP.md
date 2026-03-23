@@ -68,7 +68,7 @@ This milestone is complete only when all are true:
 - [x] **S05: Status, alerts, and cooking suggestions** `risk:medium` `depends:[S04]`
   > After this: The app shows current state, surfaces aging or forgotten food, and suggests what to cook from what is on hand.
 
-- [ ] **S06: Local-first runtime and end-to-end proof** `risk:medium` `depends:[S01,S02,S03,S04,S05]`
+- [x] **S06: Local-first runtime and end-to-end proof** `risk:medium` `depends:[S01,S02,S03,S04,S05]`
   > After this: The full QR → intake → status → update → suggestion loop works end-to-end in the real local home-network environment.
 
 ## Boundary Map

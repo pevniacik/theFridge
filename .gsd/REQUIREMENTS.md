@@ -135,7 +135,7 @@ This file is the explicit capability and coverage contract for the project.
 - Source: user
 - Primary owning slice: M001/S06
 - Supporting slices: M001/S01
-- Validation: Milestone close re-verified on 2026-03-23: `npm run dev` bound Next.js to `0.0.0.0:3000`; `curl -sf http://localhost:3000/api/health` and `curl -sf http://192.168.1.22:3000/api/health` both returned `{"status":"ok"...}`; `curl -s http://192.168.1.22:3000/fridges/ZPPo56GIYQ | grep 192.168.1.22` confirmed LAN-routable QR URLs; `npm run test`, `npm run type-check`, and `npm run build` all passed during milestone closure.
+- Validation: S06/T03 final proof 2026-03-23: `bash scripts/verify-s06-lan.sh 192.168.1.22 ZPPo56GIYQ` → 6/6 checks passed: localhost health `{"status":"ok"}`, LAN health `{"status":"ok"}` at `http://192.168.1.22:3000/api/health`, fridge page HTML contains LAN IP confirming QR encodes LAN origin, 28 test files / 115 tests pass, type-check clean, production build succeeds. Browser confirmed QR rendered with `http://192.168.1.22:3000/fridges/ZPPo56GIYQ`, STATUS OVERVIEW and all sections render over LAN IP. Reusable verification script committed at `scripts/verify-s06-lan.sh`.
 - Notes: Public domain hosting belongs to a later milestone.
 
 ### R013 — More than one person in a household can use the system against the same fridge/freezer inventory.
