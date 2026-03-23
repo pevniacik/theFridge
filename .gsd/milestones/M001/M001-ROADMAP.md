@@ -65,7 +65,7 @@ This milestone is complete only when all are true:
 - [x] **S04: Shared household inventory maintenance** `risk:high` `depends:[S03]`
   > After this: Household members can update, remove, or discard items and the current fridge/freezer status stays trustworthy.
 
-- [ ] **S05: Status, alerts, and cooking suggestions** `risk:medium` `depends:[S04]`
+- [x] **S05: Status, alerts, and cooking suggestions** `risk:medium` `depends:[S04]`
   > After this: The app shows current state, surfaces aging or forgotten food, and suggests what to cook from what is on hand.
 
 - [ ] **S06: Local-first runtime and end-to-end proof** `risk:medium` `depends:[S01,S02,S03,S04,S05]`

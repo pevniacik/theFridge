@@ -1,9 +1,9 @@
 # GSD State
 
 **Active Milestone:** M001: Local-first household fridge inventory
-**Active Slice:** S05: Status, alerts, and cooking suggestions
+**Active Slice:** S06: Local-first runtime and end-to-end proof
 **Phase:** executing
-**Requirements Status:** 4 active · 10 validated · 4 deferred · 4 out of scope
+**Requirements Status:** 1 active · 13 validated · 4 deferred · 4 out of scope
 
 ## Milestone Registry
 - 🔄 **M001:** Local-first household fridge inventory
@@ -15,4 +15,4 @@
 - None
 
 ## Next Action
-Execute T02: Render status overview, alerts, and cooking suggestions UI in slice S05.
+Begin S06: Local-first runtime and end-to-end proof. Read S06-PLAN.md and execute T01.

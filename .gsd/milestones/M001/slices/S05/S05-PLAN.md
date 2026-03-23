@@ -51,7 +51,7 @@
   - Verify: `npx tsc --noEmit` exits 0; `grep -q "analyzeInventory" app/fridges/\[fridgeId\]/page.tsx` confirms wiring
   - Done when: `lib/inventory/analysis.ts` exports typed analysis functions, `page.tsx` calls them server-side, and TypeScript compiles cleanly
 
-- [ ] **T02: Render status overview, alerts, and cooking suggestions UI** `est:1h`
+- [x] **T02: Render status overview, alerts, and cooking suggestions UI** `est:1h`
   - Why: The analysis data from T01 needs user-visible rendering to retire R009 (alerts) and R010 (suggestions). This task builds the read-only UI components and places them on the fridge context page.
   - Files: `app/fridges/[fridgeId]/StatusSection.tsx`, `app/fridges/[fridgeId]/page.tsx`
   - Do: Build a `StatusSection` component (can be server component or light client component — no mutations needed) that renders three sub-sections: (1) status overview card with counts by urgency, (2) alerts list showing expired/expiring/forgotten items with name, days info, and urgency-appropriate color (red for expired, amber for expiring-soon, softer amber for estimated, muted for forgotten), (3) cooking suggestions cards referencing on-hand items with priority toward urgent ingredients. Use the project's design tokens (--color-panel, --color-border, --color-cold, --color-accent, --color-muted, --font-display, --font-body, --radius-card). Handle empty inventory gracefully — show a concise empty-state message instead of blank sections. Place `StatusSection` on the fridge page between the QR section and IntakeSection. Match the existing dark industrial aesthetic.

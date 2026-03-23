@@ -19,6 +19,7 @@ import SetupBanner from "./SetupBanner";
 import InventorySection from "./InventorySection";
 import RecipeSection from "./RecipeSection";
 import QrSection from "./QrSection";
+import StatusSection from "./StatusSection";
 
 interface Props {
   params: Promise<{ fridgeId: string }>;
@@ -129,7 +130,6 @@ export default async function FridgeContextPage({ params }: Props) {
   // Results are passed as props to StatusSection in T02.
   const analysisResult = analyzeInventory(inventoryItems);
   const suggestions = generateSuggestions(inventoryItems);
-  // TODO T02: render <StatusSection analysisResult={analysisResult} suggestions={suggestions} />
 
   return (
     <div
@@ -249,6 +249,8 @@ export default async function FridgeContextPage({ params }: Props) {
         providerLabel={activeProvider ? providerLabelMap[activeProvider.provider] : undefined}
         model={activeProvider?.model}
       />
+
+      <StatusSection analysisResult={analysisResult} suggestions={suggestions} />
 
       <IntakeSection fridgeId={fridge.id} storageType={fridge.type} />
 
