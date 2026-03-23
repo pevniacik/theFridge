@@ -50,7 +50,7 @@
   - Verify: `npm run test -- app/api/health/route.test.ts lib/qr/origin.test.ts && npm run build`
   - Done when: the app starts LAN-reachable by default in dev mode, health/origin behavior is test-covered, and README tells a future agent how to verify LAN reachability
 
-- [ ] **T02: Add automated end-to-end proof for the assembled inventory loop** `est:1h`
+- [x] **T02: Add automated end-to-end proof for the assembled inventory loop** `est:1h`
   - Why: Final-assembly proof should not depend only on one-off manual checks. The full intake → review → promote → status/suggestion data path needs an automated regression artifact.
   - Files: `e2e/intake-flow.test.ts`, `test-fixtures/sample-food.jpg`, `lib/db/test-helper.ts`, `app/api/intake/[fridgeId]/route.test.ts`, `lib/inventory/analysis.ts`
   - Do: Add a Vitest integration test file that exercises the happy-path loop with deterministic data: photo extraction via stub provider, draft confirmation/promotion into inventory, expiry-aware status analysis, and cooking suggestions grounded in actual stored item names; add a small committed sample grocery photo fixture; update test helpers only as needed to keep the flow deterministic and isolated.

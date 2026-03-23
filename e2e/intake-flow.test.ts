@@ -16,6 +16,7 @@ import { saveDraftItems } from "@/lib/intake/store";
 import { StubProvider } from "@/lib/intake/providers/stub";
 import { extractDraftFromImage } from "@/lib/intake/extract";
 import { promoteToInventory, listInventoryItems } from "@/lib/inventory/store";
+import { analyzeInventory, generateSuggestions } from "@/lib/inventory/analysis";
 import { upsertProvider, getActiveProvider } from "@/lib/settings/store";
 
 const SAMPLE_PHOTO_PATH = path.join(process.cwd(), "test-fixtures", "sample-food.jpg");
@@ -169,5 +170,86 @@ describe("E2E: Intake happy-path flow", () => {
 
     expect(config?.model).toBe("gemini-2.5-pro");
     expect(config?.api_key).toBe("AIzaSy-original-key");
+  });
+
+  // ── Analysis + suggestions: uses persisted inventory rows, not mocked inputs ──
+
+  it("analyzeInventory: classifies expired and ok items from real persisted rows", () => {
+    const fridge = createFridge({ name: "Test Fridge", type: "fridge" });
+
+    // Reference date pinned for determinism
+    const now = new Date("2026-03-24T12:00:00Z");
+
+    // Insert items directly via inventory store after promoting a minimal draft
+    const draftItems = [
+      { id: "d1", name: "Expired Milk",  quantity: "1", unit: "litre",  category: "dairy",  confidence: "high" as const, estimated_expiry_days: null },
+      { id: "d2", name: "Fresh Eggs",    quantity: "6", unit: "units",  category: "dairy",  confidence: "high" as const, estimated_expiry_days: null },
+    ];
+    saveDraftItems(fridge.id, draftItems);
+
+    promoteToInventory(fridge.id, [
+      { draft_id: "d1", name: "Expired Milk",  quantity: "1", unit: "litre",  category: "dairy",  confidence: "high", expiry_date: "2026-03-20", purchase_date: null, expiry_estimated: false },
+      { draft_id: "d2", name: "Fresh Eggs",    quantity: "6", unit: "units",  category: "dairy",  confidence: "high", expiry_date: "2026-04-10", purchase_date: null, expiry_estimated: false },
+    ]);
+
+    const inventory = listInventoryItems(fridge.id);
+    expect(inventory).toHaveLength(2);
+
+    const { status, classified } = analyzeInventory(inventory, now);
+
+    expect(status.total).toBe(2);
+    expect(status.expired).toBe(1);
+    expect(status.ok).toBe(1);
+
+    const expiredItem = classified.find(ci => ci.urgency === "expired");
+    expect(expiredItem?.item.name).toBe("Expired Milk");
+
+    const okItem = classified.find(ci => ci.urgency === "ok");
+    expect(okItem?.item.name).toBe("Fresh Eggs");
+  });
+
+  it("generateSuggestions: suggestion cards reference real stored item names", () => {
+    const fridge = createFridge({ name: "Suggestion Fridge", type: "fridge" });
+    const now = new Date("2026-03-24T12:00:00Z");
+
+    // Seed 4 items to trigger the "Cook tonight" card (requires 3+)
+    const draftItems = [
+      { id: "s1", name: "Butter",  quantity: "1", unit: "pack",   category: "dairy",  confidence: "high" as const, estimated_expiry_days: null },
+      { id: "s2", name: "Tomatoes", quantity: "3", unit: "units", category: "veg",    confidence: "high" as const, estimated_expiry_days: null },
+      { id: "s3", name: "Pasta",    quantity: "1", unit: "bag",   category: "pantry", confidence: "high" as const, estimated_expiry_days: null },
+      { id: "s4", name: "Old Cheese", quantity: "1", unit: "block", category: "dairy", confidence: "high" as const, estimated_expiry_days: null },
+    ];
+    saveDraftItems(fridge.id, draftItems);
+
+    promoteToInventory(fridge.id, [
+      { draft_id: "s1", name: "Butter",     quantity: "1", unit: "pack",  category: "dairy",  confidence: "high", expiry_date: "2026-03-25", purchase_date: null, expiry_estimated: false },
+      { draft_id: "s2", name: "Tomatoes",   quantity: "3", unit: "units", category: "veg",    confidence: "high", expiry_date: "2026-04-10", purchase_date: null, expiry_estimated: false },
+      { draft_id: "s3", name: "Pasta",      quantity: "1", unit: "bag",   category: "pantry", confidence: "high", expiry_date: "2026-04-15", purchase_date: null, expiry_estimated: false },
+      { draft_id: "s4", name: "Old Cheese", quantity: "1", unit: "block", category: "dairy",  confidence: "high", expiry_date: "2026-03-22", purchase_date: null, expiry_estimated: false },
+    ]);
+
+    const inventory = listInventoryItems(fridge.id);
+    expect(inventory).toHaveLength(4);
+
+    const suggestions = generateSuggestions(inventory, now);
+    expect(suggestions.length).toBeGreaterThan(0);
+
+    // All ingredient names in every card must come from real stored item names
+    const storedNames = new Set(inventory.map(i => i.name));
+    for (const card of suggestions) {
+      for (const ingredient of card.ingredients) {
+        expect(storedNames.has(ingredient)).toBe(true);
+      }
+    }
+
+    // "Use soon" card must appear because Butter and Old Cheese are expiring/expired
+    const useSoonCard = suggestions.find(s => s.title === "Use soon");
+    expect(useSoonCard).toBeDefined();
+    expect(useSoonCard?.urgencyDriven).toBe(true);
+    expect(useSoonCard?.ingredients.length).toBeGreaterThan(0);
+
+    // "Cook tonight" card must appear because 4 items are in inventory
+    const cookTonightCard = suggestions.find(s => s.title === "Cook tonight");
+    expect(cookTonightCard).toBeDefined();
   });
 });

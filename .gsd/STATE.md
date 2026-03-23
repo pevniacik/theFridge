@@ -15,4 +15,4 @@
 - None
 
 ## Next Action
-Execute T02 in S06: add automated end-to-end proof for the assembled inventory loop.
+Execute T03 in S06: capture live LAN acceptance for QR entry and cross-device usage.
