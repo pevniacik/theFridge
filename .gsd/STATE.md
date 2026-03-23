@@ -9,10 +9,10 @@
 - 🔄 **M001:** Local-first household fridge inventory
 
 ## Recent Decisions
-- None recorded
+- D025 — S06 uses two-track proof: automated regression plus live LAN acceptance
 
 ## Blockers
 - None
 
 ## Next Action
-Begin S06: Local-first runtime and end-to-end proof. Read S06-PLAN.md and execute T01.
+Execute T01 in S06: enable LAN-safe runtime defaults and operational diagnostics.
