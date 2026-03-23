@@ -43,7 +43,7 @@
 
 ## Tasks
 
-- [ ] **T01: Enable LAN-safe runtime defaults and operational diagnostics** `est:45m`
+- [x] **T01: Enable LAN-safe runtime defaults and operational diagnostics** `est:45m`
   - Why: S06 owns R011. The app cannot be proven usable on the home network if `npm run dev` still binds to localhost only or if LAN health/origin checks are not mechanically verifiable.
   - Files: `package.json`, `app/api/health/route.ts`, `app/api/health/route.test.ts`, `lib/qr/origin.test.ts`, `README.md`
   - Do: Change the dev script to `next dev --hostname 0.0.0.0`; keep `/api/health` as the operational liveness endpoint and add/update route tests so DB-backed health is explicitly covered; extend QR-origin tests if needed so LAN host / forwarded-host / override behavior is locked; document the LAN run command and QR-origin verification path in README without overclaiming printed-scan proof.

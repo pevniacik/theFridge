@@ -16,10 +16,41 @@ npm run dev
 ```
 
 Notes:
+- Dev server binds to all network interfaces (`0.0.0.0:3000`) so it is reachable from other devices on the home Wi-Fi.
 - Dev server auto-falls back from port 3000 if occupied.
 - AI extraction uses a deterministic stub until you configure a provider in Settings.
 - `QR_BASE_URL` is optional; use it to force QR links to a LAN-reachable origin.
 - SQLite database is created automatically at `data/fridges.db`.
+
+## LAN Reachability Verification
+
+To confirm the app is reachable on the home network and that QR codes encode the correct origin:
+
+```bash
+# 1. Start the app
+npm run dev
+
+# 2. Find your LAN IP (macOS/Linux)
+ipconfig getifaddr en0   # macOS Wi-Fi
+# or
+hostname -I | awk '{print $1}'  # Linux
+
+# 3. Verify localhost health
+curl -sf http://localhost:3000/api/health
+# → {"status":"ok","timestamp":"..."}
+
+# 4. Verify LAN health (replace IP below)
+curl -sf http://192.168.1.22:3000/api/health
+# → {"status":"ok","timestamp":"..."}
+
+# 5. Verify fridge page QR encodes the LAN IP (replace ID)
+curl -s http://192.168.1.22:3000/fridges/ZPPo56GIYQ | grep -o 'http://192\.168\.1\.22:[0-9]*/[^"< ]*' | head -1
+# → http://192.168.1.22:3000/fridges/ZPPo56GIYQ
+```
+
+If the QR still shows `localhost` after accessing the page via the LAN IP:
+- Set `QR_BASE_URL=http://192.168.1.22:3000` (or your actual LAN IP) and restart.
+- Reload the fridge context page to regenerate the QR with the correct origin.
 
 ## Quick AI Setup (Free)
 

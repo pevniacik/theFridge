@@ -48,4 +48,10 @@ describe("resolveQrBaseUrl", () => {
 
     expect(baseUrl).toBe("http://192.168.1.22:3005");
   });
+
+  it("falls back to localhost:3000 when no host header is present", () => {
+    const baseUrl = resolveQrBaseUrl(makeHeaders({}));
+
+    expect(baseUrl).toBe("http://localhost:3000");
+  });
 });

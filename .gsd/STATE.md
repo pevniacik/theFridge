@@ -9,10 +9,10 @@
 - 🔄 **M001:** Local-first household fridge inventory
 
 ## Recent Decisions
-- D025 — S06 uses two-track proof: automated regression plus live LAN acceptance
+- None recorded
 
 ## Blockers
 - None
 
 ## Next Action
-Execute T01 in S06: enable LAN-safe runtime defaults and operational diagnostics.
+Execute T02 in S06: add automated end-to-end proof for the assembled inventory loop.
