@@ -10,7 +10,7 @@ A household can reliably answer: what is actually in this fridge or freezer righ
 
 ## Current State
 
-S01, S02, S03, and S04 complete. The local web app runs with fridge/freezer identity records, printable QR code generation, and storage-context routing (S01). Photo intake is fully wired: a user can upload a grocery photo, review and correct AI-extracted draft items in an editable review UI, and confirm them into the `intake_drafts` DB table (S02). Confirmed draft items are promoted into a persistent item-level `inventory_items` table with explicit or estimated expiry dates; the `InventorySection` component shows pending items with per-item expiry inputs (date picker + quick-pick day buttons 3d/7d/14d/30d) and renders the inventory list after promotion (S03). Each active inventory item can now be edited inline (name, quantity, unit, expiry) or marked used/discarded via per-row controls; mutations are fridge-scoped by both item ID and fridge_id, set updated_at=datetime('now'), flip status rather than deleting rows, and refresh the UI via startTransition+router.refresh() (S04). The QR → context entry → photo intake → draft review → confirm → inventory → maintenance loop works end-to-end on localhost. S05 (status, alerts, and cooking suggestions) is next.
+M001 is complete. The local web app now delivers the full local-first household loop: fridge/freezer identity records with printable SVG QR codes and storage-context routing (S01); review-first grocery photo intake with editable AI/stub drafts persisted to `intake_drafts` (S02); atomic promotion into item-level `inventory_items` with explicit or estimated expiry dates (S03); shared maintenance actions for inline edit, used, and discarded states with fridge-scoped mutations and no deletes (S04); and a server-rendered status experience with urgency alerts plus grounded cooking suggestions derived from current inventory (S05). S06 closed the milestone by proving LAN reachability with `next dev --hostname 0.0.0.0`, confirming the health endpoint and QR URLs over `192.168.1.22`, and re-running milestone verification (`npm run test`, `npm run type-check`, `npm run build`). The assembled QR → intake → inventory → maintenance → status → suggestion loop is now verified for M001.
 
 ## Architecture / Key Patterns
 
@@ -22,5 +22,5 @@ See `.gsd/REQUIREMENTS.md` for the explicit capability contract, requirement sta
 
 ## Milestone Sequence
 
-- [ ] M001: Local-first household fridge inventory — Run a QR-based fridge/freezer inventory app on the home network with photo intake, trustworthy status, expiry awareness, and grounded cooking suggestions
+- [x] M001: Local-first household fridge inventory — Run a QR-based fridge/freezer inventory app on the home network with photo intake, trustworthy status, expiry awareness, and grounded cooking suggestions
 - [ ] M002: Public web deployment — Extend the product to a domain-hosted public version with broader access and deployment/security concerns

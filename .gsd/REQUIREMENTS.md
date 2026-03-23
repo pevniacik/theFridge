@@ -4,39 +4,6 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Active
 
-### R009 — The app highlights items that are aging, nearing expiry, or effectively forgotten in storage.
-- Class: launchability
-- Status: active
-- Description: The app highlights items that are aging, nearing expiry, or effectively forgotten in storage.
-- Why it matters: Waste prevention is a central reason the product exists.
-- Source: inferred
-- Primary owning slice: M001/S05
-- Supporting slices: M001/S03, M001/S04, M001/S06
-- Validation: mapped
-- Notes: Freezer-forgotten items are explicitly important.
-
-### R010 — The app generates cooking suggestions from the current inventory, with preference toward using available or aging ingredients.
-- Class: differentiator
-- Status: active
-- Description: The app generates cooking suggestions from the current inventory, with preference toward using available or aging ingredients.
-- Why it matters: It turns inventory awareness into action and reinforces waste reduction.
-- Source: user
-- Primary owning slice: M001/S05
-- Supporting slices: M001/S06
-- Validation: mapped
-- Notes: Suggestions should stay grounded in current inventory, not generic inspiration.
-
-### R011 — The first version is usable as a local web app reachable within the home network.
-- Class: constraint
-- Status: active
-- Description: The first version is usable as a local web app reachable within the home network.
-- Why it matters: This is the user’s chosen deployment shape for version 1.
-- Source: user
-- Primary owning slice: M001/S06
-- Supporting slices: M001/S01
-- Validation: mapped
-- Notes: Public domain hosting belongs to a later milestone.
-
 ### R012 — A later milestone extends the app into a public, domain-hosted version for broader access.
 - Class: launchability
 - Status: active
@@ -91,7 +58,7 @@ This file is the explicit capability and coverage contract for the project.
 - Source: user
 - Primary owning slice: M001/S02
 - Supporting slices: M001/S03, M001/S06
-- Validation: S02 verified: IntakeSection renders an editable review grid (name, quantity, unit inputs + delete button per row) before any item reaches intake_drafts. Confirm step is explicit and gated — no item is written to the DB without user action. Browser test: edited a name, deleted a row, confirmed — only the modified items were persisted.
+- Validation: S02 verified: IntakeSection renders an editable review grid (name, quantity, unit inputs + delete button per row) before any item reaches intake_drafts. Confirm step is explicit and gated - no item is written to the DB without user action. Browser test: edited a name, deleted a row, confirmed - only the modified items were persisted.
 - Notes: This is especially important for names, storage placement, and expiry details.
 
 ### R005 — The system stores item-level inventory for each fridge/freezer rather than only broad categories.
@@ -124,7 +91,7 @@ This file is the explicit capability and coverage contract for the project.
 - Source: user
 - Primary owning slice: M001/S04
 - Supporting slices: M001/S06
-- Validation: S04 verified: updateInventoryItem store function UPDATEs name/quantity/unit/expiry_date/expiry_estimated scoped by id AND fridge_id, setting updated_at=datetime('now'). setInventoryItemStatus flips status to 'used' or 'discarded' with the same dual-key scoping. Browser test on Kitchen Fridge (ZPPo56GIYQ): edited "Greek Yogurt" → name persisted in DB with fresh updated_at; marked "Butter" used → status='used' in DB; marked item discarded → status='discarded' in DB. No rows are DELETEd — full audit trail preserved. Server Action error path returns { success: false, error: '...' } rendered as a per-row red banner. [inventory] log lines confirmed in server console for all mutation types.
+- Validation: S04 verified: updateInventoryItem store function UPDATEs name/quantity/unit/expiry_date/expiry_estimated scoped by id AND fridge_id, setting updated_at=datetime('now'). setInventoryItemStatus flips status to 'used' or 'discarded' with the same dual-key scoping. Browser test on Kitchen Fridge (ZPPo56GIYQ): edited "Greek Yogurt" → name persisted in DB with fresh updated_at; marked "Butter" used → status='used' in DB; marked item discarded → status='discarded' in DB. No rows are DELETEd - full audit trail preserved. Server Action error path returns { success: false, error: '...' } rendered as a per-row red banner. [inventory] log lines confirmed in server console for all mutation types.
 - Notes: Version 1 favors explicit actions over inference.
 
 ### R008 — The app can show the current item-level state of a selected fridge/freezer on demand.
@@ -135,8 +102,41 @@ This file is the explicit capability and coverage contract for the project.
 - Source: user
 - Primary owning slice: M001/S04
 - Supporting slices: M001/S05, M001/S06
-- Validation: S04 verified: After each mutation (edit save, mark used, mark discarded), router.refresh() wrapped in startTransition() re-reads server truth from SQLite. The active inventory list reflects only status='active' rows — used/discarded items disappear immediately after the status flip. DB and UI are consistent: sqlite3 query confirms status change, browser confirms count decrease. listInventoryItems WHERE status='active' remains the authoritative read model.
+- Validation: S04 verified: After each mutation (edit save, mark used, mark discarded), router.refresh() wrapped in startTransition() re-reads server truth from SQLite. The active inventory list reflects only status='active' rows - used/discarded items disappear immediately after the status flip. DB and UI are consistent: sqlite3 query confirms status change, browser confirms count decrease. listInventoryItems WHERE status='active' remains the authoritative read model.
 - Notes: Trustworthiness matters more than decorative presentation.
+
+### R009 — The app highlights items that are aging, nearing expiry, or effectively forgotten in storage.
+- Class: launchability
+- Status: validated
+- Description: The app highlights items that are aging, nearing expiry, or effectively forgotten in storage.
+- Why it matters: Waste prevention is a central reason the product exists.
+- Source: inferred
+- Primary owning slice: M001/S05
+- Supporting slices: M001/S03, M001/S04, M001/S06
+- Validation: S05 verified: analyzeInventory() in lib/inventory/analysis.ts classifies active inventory items into 5 urgency buckets (expired, expiring-soon, estimated-expiry-soon, forgotten, ok) using a priority-ordered if-else chain. StatusSection.tsx renders a "needs attention" section with urgency-sorted alert rows showing item name, badge, and timing copy (e.g. "expired 2 days ago", "not touched in 18 days"). Browser verification on mixed-status-fridge confirmed alert rows match actual DB rows via sqlite3 query. Empty fridge shows clean empty state with no alert section rendered.
+- Notes: Freezer-forgotten items are explicitly important.
+
+### R010 — The app generates cooking suggestions from the current inventory, with preference toward using available or aging ingredients.
+- Class: differentiator
+- Status: validated
+- Description: The app generates cooking suggestions from the current inventory, with preference toward using available or aging ingredients.
+- Why it matters: It turns inventory awareness into action and reinforces waste reduction.
+- Source: user
+- Primary owning slice: M001/S05
+- Supporting slices: M001/S06
+- Validation: S05 verified: generateSuggestions() in lib/inventory/analysis.ts produces 0-3 SuggestionCard objects grounded in actual item names from inventory, with urgency-driven cards prioritizing expired/expiring items first. StatusSection.tsx renders a "cooking ideas" section with cards showing title, description referencing real item names, and ingredient chips. Urgency-driven cards get a warm amber gradient treatment. Browser verification on mixed-status-fridge confirmed ingredient names in suggestion cards match actual DB row names. Cook tonight card only appears when 3+ active items exist; Rediscover card only appears when forgotten items exist.
+- Notes: Suggestions should stay grounded in current inventory, not generic inspiration.
+
+### R011 — The first version is usable as a local web app reachable within the home network.
+- Class: constraint
+- Status: validated
+- Description: The first version is usable as a local web app reachable within the home network.
+- Why it matters: This is the user's chosen deployment shape for version 1.
+- Source: user
+- Primary owning slice: M001/S06
+- Supporting slices: M001/S01
+- Validation: Milestone close re-verified on 2026-03-23: `npm run dev` bound Next.js to `0.0.0.0:3000`; `curl -sf http://localhost:3000/api/health` and `curl -sf http://192.168.1.22:3000/api/health` both returned `{"status":"ok"...}`; `curl -s http://192.168.1.22:3000/fridges/ZPPo56GIYQ | grep 192.168.1.22` confirmed LAN-routable QR URLs; `npm run test`, `npm run type-check`, and `npm run build` all passed during milestone closure.
+- Notes: Public domain hosting belongs to a later milestone.
 
 ### R013 — More than one person in a household can use the system against the same fridge/freezer inventory.
 - Class: primary-user-loop
@@ -146,7 +146,7 @@ This file is the explicit capability and coverage contract for the project.
 - Source: user
 - Primary owning slice: M001/S04
 - Supporting slices: M001/S06
-- Validation: S04 verified: All mutations are scoped exclusively by item.id AND fridge_id — cross-fridge writes are structurally impossible (WHERE id=? AND fridge_id=?). setInventoryItemStatus guards on status='active' so double-acting on an item is a no-op that surfaces as an error, not silent corruption. The stateless server/SQLite model means any household member hitting the same local URL sees and mutates the same shared ground truth without session conflicts.
+- Validation: S04 verified: All mutations are scoped exclusively by item.id AND fridge_id - cross-fridge writes are structurally impossible (WHERE id=? AND fridge_id=?). setInventoryItemStatus guards on status='active' so double-acting on an item is a no-op that surfaces as an error, not silent corruption. The stateless server/SQLite model means any household member hitting the same local URL sees and mutates the same shared ground truth without session conflicts.
 - Notes: M001 can keep household access simple as long as the shared flow works.
 
 ### R014 — The app surfaces uncertainty, bad scans, and review requirements rather than silently mutating inventory with wrong data.
@@ -204,7 +204,7 @@ This file is the explicit capability and coverage contract for the project.
 - Primary owning slice: none
 - Supporting slices: none
 - Validation: unmapped
-- Notes: M001 stays focused on grounded “use what I have” suggestions.
+- Notes: M001 stays focused on grounded "use what I have" suggestions.
 
 ## Out of Scope
 
@@ -245,7 +245,7 @@ This file is the explicit capability and coverage contract for the project.
 - Class: anti-feature
 - Status: out-of-scope
 - Description: Version 1 should not be shaped primarily around barcode scanning and packaged-product cataloging.
-- Why it matters: The user’s actual emphasis is mixed groceries and expiry judgment, including produce.
+- Why it matters: The user's actual emphasis is mixed groceries and expiry judgment, including produce.
 - Source: inferred
 - Primary owning slice: none
 - Supporting slices: none
@@ -259,16 +259,16 @@ This file is the explicit capability and coverage contract for the project.
 | R001 | primary-user-loop | validated | M001/S01 | M001/S06 | S01 verified: valid fridge IDs resolve the correct storage-context page at /fridges/[fridgeId]; the QR URL encodes the exact same route; opening the QR URL loads the correct context. All 7 slice checks pass. |
 | R002 | core-capability | validated | M001/S01 | M001/S06 | S01 verified: the app generates SVG QR codes server-side (lib/qr/generate.ts) encoding each fridge/freezer's full context URL. QR is rendered on the storage-context page and is print-ready. QR URL was confirmed to match the route contract via curl inspection. |
 | R003 | core-capability | validated | M001/S02 | M001/S06 | S02 verified: POST /api/intake/[fridgeId] accepts a photo upload and returns a structured JSON draft with named items, quantities, units, and confidence fields. Stub returns 3 items when OPENAI_API_KEY is absent; OpenAI gpt-4o-mini call is wired for when the key is present. curl test confirmed: 3 items returned for valid fridge + photo input. |
-| R004 | failure-visibility | validated | M001/S02 | M001/S03, M001/S06 | S02 verified: IntakeSection renders an editable review grid (name, quantity, unit inputs + delete button per row) before any item reaches intake_drafts. Confirm step is explicit and gated — no item is written to the DB without user action. Browser test: edited a name, deleted a row, confirmed — only the modified items were persisted. |
+| R004 | failure-visibility | validated | M001/S02 | M001/S03, M001/S06 | S02 verified: IntakeSection renders an editable review grid (name, quantity, unit inputs + delete button per row) before any item reaches intake_drafts. Confirm step is explicit and gated - no item is written to the DB without user action. Browser test: edited a name, deleted a row, confirmed - only the modified items were persisted. |
 | R005 | primary-user-loop | validated | M001/S03 | M001/S04, M001/S05, M001/S06 | S03 verified: inventory_items table persists item-level records scoped to each fridge via FK. After uploading a grocery photo, confirming the draft, and promoting via InventorySection, sqlite3 confirms individual named rows (Greek Yogurt, Butter) with correct fridge_id. listInventoryItems returns the active set per fridge. Browser renders the inventory list with name/quantity/unit per item. |
 | R006 | core-capability | validated | M001/S03 | M001/S05, M001/S06 | S03 verified: inventory_items schema includes expiry_date (TEXT nullable) and expiry_estimated (INTEGER 0/1). Quick-pick day buttons (3d/7d/14d/30d) set expiry_estimated=1; explicit date input sets expiry_estimated=0; blank expiry is valid (null). DB confirmed: promoted row via 7d quick-pick shows expiry_date='2026-03-28', expiry_estimated=1; row with no date shows expiry_date=null, expiry_estimated=0. Amber 'est.' badge renders in the inventory list for estimated entries. |
-| R007 | continuity | validated | M001/S04 | M001/S06 | S04 verified: updateInventoryItem store function UPDATEs name/quantity/unit/expiry_date/expiry_estimated scoped by id AND fridge_id, setting updated_at=datetime('now'). setInventoryItemStatus flips status to 'used' or 'discarded' with the same dual-key scoping. Browser test on Kitchen Fridge (ZPPo56GIYQ): edited "Greek Yogurt" → name persisted in DB with fresh updated_at; marked "Butter" used → status='used' in DB; marked item discarded → status='discarded' in DB. No rows are DELETEd — full audit trail preserved. Server Action error path returns { success: false, error: '...' } rendered as a per-row red banner. [inventory] log lines confirmed in server console for all mutation types. |
-| R008 | primary-user-loop | validated | M001/S04 | M001/S05, M001/S06 | S04 verified: After each mutation (edit save, mark used, mark discarded), router.refresh() wrapped in startTransition() re-reads server truth from SQLite. The active inventory list reflects only status='active' rows — used/discarded items disappear immediately after the status flip. DB and UI are consistent: sqlite3 query confirms status change, browser confirms count decrease. listInventoryItems WHERE status='active' remains the authoritative read model. |
-| R009 | launchability | active | M001/S05 | M001/S03, M001/S04, M001/S06 | mapped |
-| R010 | differentiator | active | M001/S05 | M001/S06 | mapped |
-| R011 | constraint | active | M001/S06 | M001/S01 | mapped |
+| R007 | continuity | validated | M001/S04 | M001/S06 | S04 verified: updateInventoryItem store function UPDATEs name/quantity/unit/expiry_date/expiry_estimated scoped by id AND fridge_id, setting updated_at=datetime('now'). setInventoryItemStatus flips status to 'used' or 'discarded' with the same dual-key scoping. Browser test on Kitchen Fridge (ZPPo56GIYQ): edited "Greek Yogurt" → name persisted in DB with fresh updated_at; marked "Butter" used → status='used' in DB; marked item discarded → status='discarded' in DB. No rows are DELETEd - full audit trail preserved. Server Action error path returns { success: false, error: '...' } rendered as a per-row red banner. [inventory] log lines confirmed in server console for all mutation types. |
+| R008 | primary-user-loop | validated | M001/S04 | M001/S05, M001/S06 | S04 verified: After each mutation (edit save, mark used, mark discarded), router.refresh() wrapped in startTransition() re-reads server truth from SQLite. The active inventory list reflects only status='active' rows - used/discarded items disappear immediately after the status flip. DB and UI are consistent: sqlite3 query confirms status change, browser confirms count decrease. listInventoryItems WHERE status='active' remains the authoritative read model. |
+| R009 | launchability | validated | M001/S05 | M001/S03, M001/S04, M001/S06 | S05 verified: analyzeInventory() in lib/inventory/analysis.ts classifies active inventory items into 5 urgency buckets (expired, expiring-soon, estimated-expiry-soon, forgotten, ok) using a priority-ordered if-else chain. StatusSection.tsx renders a "needs attention" section with urgency-sorted alert rows showing item name, badge, and timing copy (e.g. "expired 2 days ago", "not touched in 18 days"). Browser verification on mixed-status-fridge confirmed alert rows match actual DB rows via sqlite3 query. Empty fridge shows clean empty state with no alert section rendered. |
+| R010 | differentiator | validated | M001/S05 | M001/S06 | S05 verified: generateSuggestions() in lib/inventory/analysis.ts produces 0-3 SuggestionCard objects grounded in actual item names from inventory, with urgency-driven cards prioritizing expired/expiring items first. StatusSection.tsx renders a "cooking ideas" section with cards showing title, description referencing real item names, and ingredient chips. Urgency-driven cards get a warm amber gradient treatment. Browser verification on mixed-status-fridge confirmed ingredient names in suggestion cards match actual DB row names. Cook tonight card only appears when 3+ active items exist; Rediscover card only appears when forgotten items exist. |
+| R011 | constraint | validated | M001/S06 | M001/S01 | Milestone close re-verified on 2026-03-23: `npm run dev` bound Next.js to `0.0.0.0:3000`; `curl -sf http://localhost:3000/api/health` and `curl -sf http://192.168.1.22:3000/api/health` both returned `{\"status\":\"ok\"...}`; `curl -s http://192.168.1.22:3000/fridges/ZPPo56GIYQ | grep 192.168.1.22` confirmed LAN-routable QR URLs; `npm run test`, `npm run type-check`, and `npm run build` all passed during milestone closure. |
 | R012 | launchability | active | M002 | none | unmapped |
-| R013 | primary-user-loop | validated | M001/S04 | M001/S06 | S04 verified: All mutations are scoped exclusively by item.id AND fridge_id — cross-fridge writes are structurally impossible (WHERE id=? AND fridge_id=?). setInventoryItemStatus guards on status='active' so double-acting on an item is a no-op that surfaces as an error, not silent corruption. The stateless server/SQLite model means any household member hitting the same local URL sees and mutates the same shared ground truth without session conflicts. |
+| R013 | primary-user-loop | validated | M001/S04 | M001/S06 | S04 verified: All mutations are scoped exclusively by item.id AND fridge_id - cross-fridge writes are structurally impossible (WHERE id=? AND fridge_id=?). setInventoryItemStatus guards on status='active' so double-acting on an item is a no-op that surfaces as an error, not silent corruption. The stateless server/SQLite model means any household member hitting the same local URL sees and mutates the same shared ground truth without session conflicts. |
 | R014 | failure-visibility | validated | M001/S02 | M001/S04, M001/S06 | S02 verified: low-confidence draft items show an amber "?" badge in the review UI; API returns 404 for invalid fridge IDs and 400 for missing photos with descriptive JSON error messages; UI shows an error phase with the server error message on failure; extraction failures surface in server logs. No item reaches intake_drafts without passing through the review-and-confirm step. |
 | R015 | quality-attribute | deferred | none | none | unmapped |
 | R016 | differentiator | deferred | none | none | unmapped |
@@ -281,7 +281,7 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Coverage Summary
 
-- Active requirements: 4
-- Mapped to slices: 4
-- Validated: 10 (R001, R002, R003, R004, R005, R006, R007, R008, R013, R014)
+- Active requirements: 1
+- Mapped to slices: 1
+- Validated: 13 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R013, R014)
 - Unmapped active requirements: 0

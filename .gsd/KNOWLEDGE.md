@@ -189,7 +189,21 @@ useEffect(() => {
 
 **Pattern for S04+:** When a household member marks food as eaten, used, or discarded, update `status` to `'used'` or `'discarded'` rather than deleting the row. `listInventoryItems` already filters `WHERE status = 'active'`, so old items disappear from the UI automatically. This preserves history and keeps the schema consistent with its own CHECK constraint intent.
 
+## Slice UAT placeholders are not milestone-grade evidence
 
+**Context:** GSD doctor can recreate missing `*-UAT.md` files with a placeholder so the artifact shape is restored.
+
+**Gotcha:** A placeholder UAT file is enough to satisfy directory structure checks, but it is **not** enough evidence to close a slice or milestone. Before milestone closure, replace any recovery placeholder with a real acceptance script and actual observed results.
+
+**Diagnostic:** If a UAT file contains wording like `Recovery placeholder UAT` or `Replace this placeholder`, treat the slice as evidence-incomplete until it is rewritten.
+
+## Vitest in nested `.gsd/worktrees/*` can discover duplicate test files
+
+**Context:** This project's worktree lives under the main repository path (`.gsd/worktrees/M001`), and the default Vitest discovery currently reaches both the worktree copy and the parent repo copy.
+
+**Gotcha:** Running `npm run test` from the worktree can report every test file twice (`app/...` and `.gsd/worktrees/M001/app/...`). Pass/fail is still meaningful, but raw file/test counts are inflated.
+
+**Implication:** When quoting milestone evidence, prefer the command outcome (`all tests passed`) and note the duplicate-discovery caveat unless Vitest include/exclude patterns are narrowed.
 
 ## Playwright fill vs React controlled inputs (S04/T02)
 
