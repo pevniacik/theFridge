@@ -11,6 +11,13 @@
 - Navigation to `/fridges` (fridge list) remains accessible from the fridge context page
 - Deleted-fridge graceful degradation: redirect to a non-existent fridge shows the existing not-found UI with recovery links
 
+## Observability / Diagnostics
+
+- **Inspect stored value:** Open browser DevTools → Console → `localStorage.getItem('lastFridgeId')`. Non-null means a write occurred; null means no fridge has been visited yet.
+- **Trace redirect:** On a fresh session at `/`, open DevTools Network tab. A redirect to `/fridges/<id>` (HTTP 200 client-side replace) confirms `LastFridgeRedirect` fired.
+- **Failure path:** If the stored ID refers to a deleted fridge, the fridge context page renders its "storage not found" UI with recovery links — no redirect loop. Inspect by deleting the DB row and revisiting `/`.
+- **Reset state:** `localStorage.removeItem('lastFridgeId')` in DevTools Console clears memory; next visit to `/` shows the normal landing page.
+
 ## Verification
 
 - `npm run type-check` exits 0
@@ -19,10 +26,11 @@
 - `test -f app/fridges/\[fridgeId\]/LastFridgeWriter.tsx` — writer component exists
 - `grep -q "LastFridgeRedirect" app/page.tsx` — redirect wired into landing page
 - `grep -q "LastFridgeWriter" app/fridges/\[fridgeId\]/page.tsx` — writer wired into fridge page
+- `grep -q "router.replace" app/components/LastFridgeRedirect.tsx` — replace (not push) prevents back-stack pollution
 
 ## Tasks
 
-- [ ] **T01: Implement last-used fridge memory with localStorage** `est:30m`
+- [x] **T01: Implement last-used fridge memory with localStorage** `est:30m`
   - Why: This is the entire slice — two small client components (redirect reader + fridge ID writer) wired into existing server component pages.
   - Files: `app/components/LastFridgeRedirect.tsx`, `app/fridges/[fridgeId]/LastFridgeWriter.tsx`, `app/page.tsx`, `app/fridges/[fridgeId]/page.tsx`
   - Do: Create `LastFridgeRedirect` client component that reads `localStorage['lastFridgeId']` on mount and calls `router.replace('/fridges/<id>')` if present, renders null. Create `LastFridgeWriter` client component that writes `localStorage['lastFridgeId'] = fridgeId` on mount, renders null. Import and render `<LastFridgeRedirect />` at top of `HomePage` return in `app/page.tsx`. Import and render `<LastFridgeWriter fridgeId={fridgeId} />` in the found-fridge path of `app/fridges/[fridgeId]/page.tsx`. Both parent pages remain Server Components.

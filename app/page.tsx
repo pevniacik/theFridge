@@ -1,4 +1,5 @@
 import Link from "next/link";
+import LastFridgeRedirect from "@/components/LastFridgeRedirect";
 
 export default function HomePage() {
   return (
@@ -9,6 +10,7 @@ export default function HomePage() {
         padding: "2rem 1rem",
       }}
     >
+      <LastFridgeRedirect />
       {/* Hero */}
       <div style={{ marginBottom: "3.5rem" }}>
         <p

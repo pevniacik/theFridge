@@ -20,6 +20,7 @@ import InventorySection from "./InventorySection";
 import RecipeSection from "./RecipeSection";
 import QrSection from "./QrSection";
 import StatusSection from "./StatusSection";
+import LastFridgeWriter from "./LastFridgeWriter";
 
 interface Props {
   params: Promise<{ fridgeId: string }>;
@@ -156,6 +157,8 @@ export default async function FridgeContextPage({ params }: Props) {
         <span>/</span>
         <span style={{ color: "var(--color-text)" }}>{fridge.name}</span>
       </nav>
+
+      <LastFridgeWriter fridgeId={fridgeId} />
 
       {/* Identity card */}
       <div
