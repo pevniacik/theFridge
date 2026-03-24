@@ -4,28 +4,6 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Active
 
-### R023 — The web app can be installed to a phone's home screen and launches in standalone mode with a real icon — no browser chrome visible.
-- Class: primary-user-loop
-- Status: active
-- Description: The web app can be installed to a phone's home screen and launches in standalone mode with a real icon — no browser chrome visible.
-- Why it matters: Without standalone mode and real icons, the app feels like a website shortcut, not a household tool. The "native-lite" feel is the goal.
-- Source: user
-- Primary owning slice: M002/S02
-- Supporting slices: none
-- Validation: unmapped
-- Notes: Requires a valid PWA manifest (already exists as `app/manifest.ts`), a service worker registered on the page, and real icon files (currently 1×1 pixel placeholders).
-
-### R024 — A service worker precaches the Next.js app shell so repeat visits load instantly. When the server is unreachable, a meaningful offline page is shown rather than a browser error.
-- Class: launchability
-- Status: active
-- Description: A service worker precaches the Next.js app shell so repeat visits load instantly. When the server is unreachable, a meaningful offline page is shown rather than a browser error.
-- Why it matters: The server is on a home device that reboots. Household members should see a clean "server offline" state, not a Chrome dinosaur.
-- Source: user
-- Primary owning slice: M002/S02
-- Supporting slices: none
-- Validation: unmapped
-- Notes: App shell caching only — API responses (inventory data) are not cached offline. Serwist (`@serwist/next`) is the chosen library.
-
 ### R025 — When a household member taps the home screen icon, the PWA opens directly to the last-used fridge context rather than the landing page.
 - Class: primary-user-loop
 - Status: active
@@ -203,6 +181,28 @@ This file is the explicit capability and coverage contract for the project.
 - Supporting slices: M001/S04, M001/S06
 - Validation: S02 verified: low-confidence draft items show an amber "?" badge in the review UI; API returns 404 for invalid fridge IDs and 400 for missing photos.
 - Notes: The app should behave like a trusted assistant, not an invisible automation layer.
+
+### R023 — The web app can be installed to a phone's home screen and launches in standalone mode with a real icon — no browser chrome visible.
+- Class: primary-user-loop
+- Status: validated
+- Description: The web app can be installed to a phone's home screen and launches in standalone mode with a real icon — no browser chrome visible.
+- Why it matters: Without standalone mode and real icons, the app feels like a website shortcut, not a household tool. The "native-lite" feel is the goal.
+- Source: user
+- Primary owning slice: M002/S02
+- Supporting slices: none
+- Validation: M002/S02 verified: Real 192×192 and 512×512 PNG icons generated (dark #0f1011 bg, 🧊 emoji accent). `file public/icons/icon-192.png` → `192 x 192`. `docker compose build` succeeds with icons in image. `/manifest.webmanifest` serves valid JSON with both icon entries. `bash scripts/verify-s02-pwa.sh` → 6/6 checks pass. Full standalone install on a real phone is documented in S02-UAT.md TC-07 (manual UAT step, not yet performed).
+- Notes: Requires a valid PWA manifest (already exists as `app/manifest.ts`), a service worker registered on the page, and real icon files (currently 1×1 pixel placeholders).
+
+### R024 — A service worker precaches the Next.js app shell so repeat visits load instantly. When the server is unreachable, a meaningful offline page is shown rather than a browser error.
+- Class: launchability
+- Status: validated
+- Description: A service worker precaches the Next.js app shell so repeat visits load instantly. When the server is unreachable, a meaningful offline page is shown rather than a browser error.
+- Why it matters: The server is on a home device that reboots. Household members should see a clean "server offline" state, not a Chrome dinosaur.
+- Source: user
+- Primary owning slice: M002/S02
+- Supporting slices: none
+- Validation: M002/S02 verified: Serwist service worker generated at `public/sw.js` (41996 bytes). `npm run build` logs `✓ (serwist) Bundling the service worker script with the URL '/sw.js' and the scope '/'`. `/~offline` static fallback page served from Docker container. Precache manifest includes `/~offline` entry. SW registration is blocked on plain HTTP LAN (browser security policy, D028) — offline caching works when accessed via localhost or HTTPS. Documented limitation accepted.
+- Notes: App shell caching only — API responses (inventory data) are not cached offline. Serwist (`@serwist/next`) is the chosen library.
 
 ### R027 — A single `docker compose up` command builds and starts the app on any Linux or macOS device with Docker installed — no `npm install`, no Node version management.
 - Class: launchability
@@ -410,8 +410,8 @@ This file is the explicit capability and coverage contract for the project.
 | R020 | anti-feature | out-of-scope | none | none | n/a |
 | R021 | anti-feature | out-of-scope | none | none | n/a |
 | R022 | anti-feature | out-of-scope | none | none | n/a |
-| R023 | primary-user-loop | active | M002/S02 | none | unmapped |
-| R024 | launchability | active | M002/S02 | none | unmapped |
+| R023 | primary-user-loop | validated | M002/S02 | none | M002/S02 verified: Real 192×192 and 512×512 PNG icons generated (dark #0f1011 bg, 🧊 emoji accent). `file public/icons/icon-192.png` → `192 x 192`. `docker compose build` succeeds with icons in image. `/manifest.webmanifest` serves valid JSON with both icon entries. `bash scripts/verify-s02-pwa.sh` → 6/6 checks pass. Full standalone install on a real phone is documented in S02-UAT.md TC-07 (manual UAT step, not yet performed). |
+| R024 | launchability | validated | M002/S02 | none | M002/S02 verified: Serwist service worker generated at `public/sw.js` (41996 bytes). `npm run build` logs `✓ (serwist) Bundling the service worker script with the URL '/sw.js' and the scope '/'`. `/~offline` static fallback page served from Docker container. Precache manifest includes `/~offline` entry. SW registration is blocked on plain HTTP LAN (browser security policy, D028) — offline caching works when accessed via localhost or HTTPS. Documented limitation accepted. |
 | R025 | primary-user-loop | active | M002/S03 | none | unmapped |
 | R026 | continuity | active | M002/S03 | none | unmapped |
 | R027 | launchability | validated | M002/S01 | none | M002/S01 verified: `docker compose build` succeeds (52s multi-stage build with `better-sqlite3` native compilation); `GET /api/health` returns `{"status":"ok"}` from inside the running container; `bash scripts/verify-s01-docker.sh` → 6/6 checks pass. |
@@ -425,7 +425,7 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Coverage Summary
 
-- Active requirements: 5
-- Mapped to slices: 5
-- Validated: 17 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R013, R014, R027, R028, R029, R030)
+- Active requirements: 3
+- Mapped to slices: 3
+- Validated: 19 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R013, R014, R023, R024, R027, R028, R029, R030)
 - Unmapped active requirements: 0

@@ -255,3 +255,22 @@ COPY --from=deps --chown=node:node /app/node_modules/file-uri-to-path ./node_mod
 **Fix:** Add `"app/sw.ts"` to the `exclude` array in `tsconfig.json`. Create a separate `tsconfig.worker.json` that extends the main config but with `"lib": ["esnext", "webworker"]` and only includes `app/sw.ts`.
 
 **Anti-pattern:** Adding `"webworker"` to the main tsconfig's `lib` array — this makes `navigator`, `window`, `document`, `Image`, etc. unavailable in DOM code.
+
+## Serwist `disable` in dev prevents stale-cache hell during development
+
+**Context:** Wiring `@serwist/next` into `next.config.ts`.
+
+**Gotcha:** Without `disable: process.env.NODE_ENV === "development"`, Serwist generates a SW on every dev rebuild and the browser aggressively caches assets. Code changes appear invisible in the browser until the SW is manually unregistered. Always set `disable: process.env.NODE_ENV === "development"` in `withSerwistInit`.
+
+## Sharp SVG rasterization for icon generation — no runtime dependency
+
+**Context:** Generating PWA icons without a running browser or canvas.
+
+**Pattern:** Sharp can rasterize an inline SVG string to PNG at any size. Install as `devDependency` (not in production). The generated PNG files are static assets committed to the repo and copied into the Docker image — Sharp itself does not run in production and adds zero container weight.
+
+```js
+import sharp from 'sharp';
+const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512">...</svg>`;
+await sharp(Buffer.from(svg)).resize(192, 192).png().toFile('public/icons/icon-192.png');
+```
+

@@ -57,7 +57,7 @@ This milestone is complete only when all are true:
 - [x] **S01: Docker Production Container** `risk:high` `depends:[]`
   > After this: `docker compose up` on the dev machine (and then on a target home device) builds and starts the app; SQLite data survives restart; `http://<LAN-IP>:3000` serves the full M001 feature set; container auto-restarts on boot
 
-- [ ] **S02: PWA Shell & Home Screen** `risk:medium` `depends:[S01]`
+- [x] **S02: PWA Shell & Home Screen** `risk:medium` `depends:[S01]`
   > After this: real app icons exist; a phone on the home LAN can tap "Add to Home Screen" and launch the app in standalone mode with no browser chrome; Serwist service worker is wired for production builds (offline fallback page shown when server is down, if HTTPS allows it)
 
 - [ ] **S03: Last-Used Fridge Memory** `risk:low` `depends:[S02]`
