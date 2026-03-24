@@ -274,3 +274,37 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512">..
 await sharp(Buffer.from(svg)).resize(192, 192).png().toFile('public/icons/icon-192.png');
 ```
 
+
+## Invisible "use client" side-effect island for browser-only APIs in Server Component pages
+
+**Context:** Accessing `localStorage` (or other browser APIs) from a page that is and should remain a Server Component.
+
+**Pattern:** Create a tiny `"use client"` component that returns `null` and performs the side effect inside a `useEffect`. Import and render it inside the Server Component. The parent stays an RSC — no hydration cost for the page itself.
+
+```tsx
+// MyClientEffect.tsx
+"use client";
+import { useEffect } from "react";
+export default function MyClientEffect({ value }: { value: string }) {
+  useEffect(() => {
+    localStorage.setItem("key", value);
+  }, [value]);
+  return null;
+}
+
+// page.tsx (Server Component)
+import MyClientEffect from "./MyClientEffect";
+export default async function Page() {
+  return <main><MyClientEffect value="hello" />{/* rest of page */}</main>;
+}
+```
+
+**This pattern is used in:** `LastFridgeWriter` (fridge context page) and `LastFridgeRedirect` (root landing page).
+
+## `router.replace` vs `router.push` for "skip this page" redirects
+
+**Context:** Redirect on mount (e.g., `LastFridgeRedirect` at `/` → `/fridges/<id>`).
+
+**Gotcha:** Using `router.push` for a redirect-on-mount means pressing Back from the destination returns to the redirecting page, which immediately redirects forward again — a redirect loop from the user's perspective.
+
+**Fix:** Always use `router.replace` for redirects that should not create a history entry. The user's Back button skips the redirect page entirely and goes to wherever they came from.

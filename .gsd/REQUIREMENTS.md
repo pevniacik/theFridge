@@ -4,28 +4,6 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Active
 
-### R025 — When a household member taps the home screen icon, the PWA opens directly to the last-used fridge context rather than the landing page.
-- Class: primary-user-loop
-- Status: active
-- Description: When a household member taps the home screen icon, the PWA opens directly to the last-used fridge context rather than the landing page.
-- Why it matters: Household members interact with the same fridge repeatedly. Requiring them to navigate through the list on every open adds friction.
-- Source: user
-- Primary owning slice: M002/S03
-- Supporting slices: none
-- Validation: unmapped
-- Notes: Stored in `localStorage` — client-side, no server state required. Written on every fridge context visit.
-
-### R026 — Despite the last-used fridge shortcut, navigation back to the fridge list remains accessible so users can switch storage contexts.
-- Class: continuity
-- Status: active
-- Description: Despite the last-used fridge shortcut, navigation back to the fridge list remains accessible so users can switch storage contexts.
-- Why it matters: Households may have multiple fridges/freezers. The shortcut must not trap the user in one context.
-- Source: user
-- Primary owning slice: M002/S03
-- Supporting slices: none
-- Validation: unmapped
-- Notes: The existing global header link to `/` already handles this; the slice just needs to ensure it survives the PWA start_url redirect logic.
-
 ### R031 — The app advertises itself on the LAN as `thefridge.local` via mDNS/Bonjour so household members can use a stable hostname instead of memorising the IP address.
 - Class: quality-attribute
 - Status: active
@@ -203,6 +181,28 @@ This file is the explicit capability and coverage contract for the project.
 - Supporting slices: none
 - Validation: M002/S02 verified: Serwist service worker generated at `public/sw.js` (41996 bytes). `npm run build` logs `✓ (serwist) Bundling the service worker script with the URL '/sw.js' and the scope '/'`. `/~offline` static fallback page served from Docker container. Precache manifest includes `/~offline` entry. SW registration is blocked on plain HTTP LAN (browser security policy, D028) — offline caching works when accessed via localhost or HTTPS. Documented limitation accepted.
 - Notes: App shell caching only — API responses (inventory data) are not cached offline. Serwist (`@serwist/next`) is the chosen library.
+
+### R025 — When a household member taps the home screen icon, the PWA opens directly to the last-used fridge context rather than the landing page.
+- Class: primary-user-loop
+- Status: validated
+- Description: When a household member taps the home screen icon, the PWA opens directly to the last-used fridge context rather than the landing page.
+- Why it matters: Household members interact with the same fridge repeatedly. Requiring them to navigate through the list on every open adds friction.
+- Source: user
+- Primary owning slice: M002/S03
+- Supporting slices: none
+- Validation: S03 verified: LastFridgeWriter (app/fridges/[fridgeId]/LastFridgeWriter.tsx) writes localStorage['lastFridgeId'] on every fridge context visit. LastFridgeRedirect (app/components/LastFridgeRedirect.tsx) reads the value on mount at the root page and calls router.replace('/fridges/<id>') if present. PWA manifest start_url is "/" ensuring the redirect fires on every home screen launch. npm run type-check and npm run build both exit 0. All grep verification checks pass.
+- Notes: Stored in `localStorage` — client-side, no server state required. Written on every fridge context visit.
+
+### R026 — Despite the last-used fridge shortcut, navigation back to the fridge list remains accessible so users can switch storage contexts.
+- Class: continuity
+- Status: validated
+- Description: Despite the last-used fridge shortcut, navigation back to the fridge list remains accessible so users can switch storage contexts.
+- Why it matters: Households may have multiple fridges/freezers. The shortcut must not trap the user in one context.
+- Source: user
+- Primary owning slice: M002/S03
+- Supporting slices: none
+- Validation: S03 verified: The fridge context page (app/fridges/[fridgeId]/page.tsx) retains the existing "← Back to overview" header link navigating to /fridges. The link was not removed or modified during S03 implementation. Users can always return to the fridge list from any fridge context page regardless of how they arrived (direct URL, PWA redirect, or manual navigation).
+- Notes: The existing global header link to `/` already handles this; the slice just needs to ensure it survives the PWA start_url redirect logic.
 
 ### R027 — A single `docker compose up` command builds and starts the app on any Linux or macOS device with Docker installed — no `npm install`, no Node version management.
 - Class: launchability
@@ -412,8 +412,8 @@ This file is the explicit capability and coverage contract for the project.
 | R022 | anti-feature | out-of-scope | none | none | n/a |
 | R023 | primary-user-loop | validated | M002/S02 | none | M002/S02 verified: Real 192×192 and 512×512 PNG icons generated (dark #0f1011 bg, 🧊 emoji accent). `file public/icons/icon-192.png` → `192 x 192`. `docker compose build` succeeds with icons in image. `/manifest.webmanifest` serves valid JSON with both icon entries. `bash scripts/verify-s02-pwa.sh` → 6/6 checks pass. Full standalone install on a real phone is documented in S02-UAT.md TC-07 (manual UAT step, not yet performed). |
 | R024 | launchability | validated | M002/S02 | none | M002/S02 verified: Serwist service worker generated at `public/sw.js` (41996 bytes). `npm run build` logs `✓ (serwist) Bundling the service worker script with the URL '/sw.js' and the scope '/'`. `/~offline` static fallback page served from Docker container. Precache manifest includes `/~offline` entry. SW registration is blocked on plain HTTP LAN (browser security policy, D028) — offline caching works when accessed via localhost or HTTPS. Documented limitation accepted. |
-| R025 | primary-user-loop | active | M002/S03 | none | unmapped |
-| R026 | continuity | active | M002/S03 | none | unmapped |
+| R025 | primary-user-loop | validated | M002/S03 | none | S03 verified: LastFridgeWriter (app/fridges/[fridgeId]/LastFridgeWriter.tsx) writes localStorage['lastFridgeId'] on every fridge context visit. LastFridgeRedirect (app/components/LastFridgeRedirect.tsx) reads the value on mount at the root page and calls router.replace('/fridges/<id>') if present. PWA manifest start_url is "/" ensuring the redirect fires on every home screen launch. npm run type-check and npm run build both exit 0. All grep verification checks pass. |
+| R026 | continuity | validated | M002/S03 | none | S03 verified: The fridge context page (app/fridges/[fridgeId]/page.tsx) retains the existing "← Back to overview" header link navigating to /fridges. The link was not removed or modified during S03 implementation. Users can always return to the fridge list from any fridge context page regardless of how they arrived (direct URL, PWA redirect, or manual navigation). |
 | R027 | launchability | validated | M002/S01 | none | M002/S01 verified: `docker compose build` succeeds (52s multi-stage build with `better-sqlite3` native compilation); `GET /api/health` returns `{"status":"ok"}` from inside the running container; `bash scripts/verify-s01-docker.sh` → 6/6 checks pass. |
 | R028 | continuity | validated | M002/S01 | none | M002/S01 verified: named volume `thefridge_data` → `/app/data` persists `fridges.db` across `docker compose down && docker compose up`; fridge created before restart was present in GET /api/fridges after restart; `bash scripts/verify-s01-docker.sh` check 4 passes. |
 | R029 | launchability | validated | M002/S01 | none | M002/S01 verified: `docker inspect thefridge-local --format '{{.HostConfig.RestartPolicy.Name}}'` returns `unless-stopped`; `bash scripts/verify-s01-docker.sh` check 5 passes. Full reboot test deferred to target home device acceptance (TC-07 in S01-UAT.md). |
@@ -425,7 +425,7 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Coverage Summary
 
-- Active requirements: 3
-- Mapped to slices: 3
-- Validated: 19 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R013, R014, R023, R024, R027, R028, R029, R030)
+- Active requirements: 1
+- Mapped to slices: 1
+- Validated: 21 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R013, R014, R023, R024, R025, R026, R027, R028, R029, R030)
 - Unmapped active requirements: 0
