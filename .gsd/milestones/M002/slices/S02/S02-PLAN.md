@@ -61,7 +61,7 @@
   - Verify: `npm run type-check` exits 0; `npm run build` exits 0 and `test -f public/sw.js`
   - Done when: Production build succeeds, `public/sw.js` is generated, type-check passes
 
-- [ ] **T03: Docker build verification and SW serving check** `est:15m`
+- [x] **T03: Docker build verification and SW serving check** `est:15m`
   - Why: Proves all new artifacts (icons, SW, offline page) are correctly included in the Docker image and served by the container. Closes R023 and R024 at the build level.
   - Files: `scripts/verify-s02-pwa.sh`
   - Do: Write a verification script that: (1) runs `docker compose build`; (2) starts container; (3) curls `/sw.js` and checks for JS content; (4) curls `/~offline` and checks for HTML; (5) curls `/icons/icon-192.png` and checks content-type; (6) curls `/manifest.webmanifest` and checks for valid JSON with icon entries; (7) tears down. Run the script.
