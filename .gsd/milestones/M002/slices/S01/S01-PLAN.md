@@ -40,7 +40,7 @@
 
 ## Tasks
 
-- [ ] **T01: Configure standalone build and rewrite Dockerfile for production** `est:45m`
+- [x] **T01: Configure standalone build and rewrite Dockerfile for production** `est:45m`
   - Why: The existing Dockerfile uses the wrong runner pattern (`npm start` + full `node_modules`) which doesn't work with `output: 'standalone'`. The runner stage must be rewritten, `next.config.ts` must enable standalone output, and `docker-compose.yml` needs the `GOOGLE_AI_API_KEY` passthrough.
   - Files: `next.config.ts`, `Dockerfile`, `docker-compose.yml`
   - Do: (1) Add `output: 'standalone'` to `next.config.ts`. (2) Rewrite Dockerfile runner stage: copy standalone output as primary payload, explicitly copy `better-sqlite3` + transitive deps, copy `.next/static/` and `public/`, set `CMD ["node", "server.js"]`. (3) Add `GOOGLE_AI_API_KEY` and `NODE_ENV` to docker-compose environment.

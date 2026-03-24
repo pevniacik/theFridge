@@ -15,10 +15,23 @@ FROM node:22-bookworm-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN mkdir -p /app/data && chown -R node:node /app
-COPY --from=builder --chown=node:node /app/package.json ./package.json
-COPY --from=builder --chown=node:node /app/node_modules ./node_modules
-COPY --from=builder --chown=node:node /app/.next ./.next
+
+# better-sqlite3 native binary + its transitive deps (not traced by nft)
+COPY --from=builder --chown=node:node /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
+COPY --from=builder --chown=node:node /app/node_modules/bindings ./node_modules/bindings
+COPY --from=builder --chown=node:node /app/node_modules/file-uri-to-path ./node_modules/file-uri-to-path
+COPY --from=builder --chown=node:node /app/node_modules/node-gyp-build ./node_modules/node-gyp-build
+
+# Standalone Next.js output (server.js ends up at /app/server.js)
+COPY --from=builder --chown=node:node /app/.next/standalone ./
+
+# Static assets (excluded from standalone by design)
+COPY --from=builder --chown=node:node /app/.next/static ./.next/static
+COPY --from=builder --chown=node:node /app/public ./public
+
+# Data directory for SQLite volume mount
+RUN mkdir -p /app/data && chown node:node /app/data
+
 USER node
 EXPOSE 3000
-CMD ["npm", "start"]
+CMD ["node", "server.js"]
