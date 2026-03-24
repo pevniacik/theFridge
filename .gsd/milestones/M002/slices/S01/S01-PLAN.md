@@ -7,7 +7,7 @@
 
 - `next.config.ts` has `output: 'standalone'`
 - Dockerfile runner stage uses `node server.js` entrypoint (not `npm start`) with standalone output
-- Dockerfile runner copies `better-sqlite3` + its transitive deps (`bindings`, `file-uri-to-path`, `node-gyp-build`) explicitly into `/app/node_modules/`
+- Dockerfile runner copies `better-sqlite3` + its transitive deps (`bindings`, `file-uri-to-path`) explicitly into `/app/node_modules/`
 - Dockerfile runner copies `.next/static/` and `public/` manually (standalone excludes them)
 - `docker-compose.yml` passes `GOOGLE_AI_API_KEY` and sets `NODE_ENV: production`
 - Named volume `thefridge_data` → `/app/data` persists SQLite across restarts
@@ -47,7 +47,7 @@
   - Verify: `grep -q "standalone" next.config.ts && grep -q "node.*server.js" Dockerfile && grep -q "GOOGLE_AI_API_KEY" docker-compose.yml`
   - Done when: All three files updated; Dockerfile runner stage uses standalone pattern with explicit native module copies.
 
-- [ ] **T02: Write verification script and validate Docker build** `est:30m`
+- [x] **T02: Write verification script and validate Docker build** `est:30m`
   - Why: The high-risk part of this slice is whether `better-sqlite3` native binaries survive the standalone build and are loadable at runtime. A verification script codifies the acceptance criteria for R027–R030 and catches regressions.
   - Files: `scripts/verify-s01-docker.sh`
   - Do: (1) Write `scripts/verify-s01-docker.sh` that builds the image, starts compose, waits for healthy, tests `/api/health`, creates a fridge via API, restarts compose, verifies fridge persists, checks `0.0.0.0` binding, cleans up. (2) Run `docker build -t thefridge-test .` to validate the build succeeds. (3) If Docker is available, run the full verification script.

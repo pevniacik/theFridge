@@ -16,11 +16,12 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# better-sqlite3 native binary + its transitive deps (not traced by nft)
-COPY --from=builder --chown=node:node /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
-COPY --from=builder --chown=node:node /app/node_modules/bindings ./node_modules/bindings
-COPY --from=builder --chown=node:node /app/node_modules/file-uri-to-path ./node_modules/file-uri-to-path
-COPY --from=builder --chown=node:node /app/node_modules/node-gyp-build ./node_modules/node-gyp-build
+# better-sqlite3 native binary + its transitive deps (not traced by nft).
+# Copied from the deps stage (pre-prune) because node-gyp-build and bindings
+# are removed by "npm prune --omit=dev" in the builder stage.
+COPY --from=deps --chown=node:node /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
+COPY --from=deps --chown=node:node /app/node_modules/bindings ./node_modules/bindings
+COPY --from=deps --chown=node:node /app/node_modules/file-uri-to-path ./node_modules/file-uri-to-path
 
 # Standalone Next.js output (server.js ends up at /app/server.js)
 COPY --from=builder --chown=node:node /app/.next/standalone ./

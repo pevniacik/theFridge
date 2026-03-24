@@ -213,3 +213,35 @@ useEffect(() => {
 
 **Gotcha for agents:** Never trust a "value was set" assertion from `browser_fill_ref` on a React controlled input as proof that the component's state was updated — it only proves the DOM value changed.
 
+
+## better-sqlite3 transitive deps: node-gyp-build is NOT a separate package in this project
+
+**Context:** Dockerfile for M002 Docker slice (S01).
+
+**Gotcha:** The T01 plan listed `node-gyp-build` as a transitive dependency of `better-sqlite3` to copy into the standalone runner stage. In practice, this project's `better-sqlite3` (v11.x) uses `bindings` and `prebuild-install` — the compiled `.node` binary is baked inside `better-sqlite3/build/Release/better_sqlite3.node`. There is no standalone `node-gyp-build` package in `node_modules`. Attempting to `COPY` it causes a Dockerfile build error.
+
+**Correct list of packages to copy into the runner stage:**
+- `better-sqlite3` (contains prebuilt `.node`)
+- `bindings` (runtime loader)
+- `file-uri-to-path` (transitive dep of `bindings`)
+
+**Verification:** `ls node_modules | grep -E 'sqlite|bindings|file-uri|node-gyp'` — only `better-sqlite3`, `bindings`, and `file-uri-to-path` appear.
+
+## Copy native modules from `deps` stage, not `builder`, in multi-stage Dockerfiles
+
+**Context:** Dockerfile for M002 Docker slice (S01).
+
+**Gotcha:** The `builder` stage runs `npm prune --omit=dev` after the production build, which can remove packages that `better-sqlite3` and its loader helpers depend on. Copying from the `builder` stage results in missing modules in the runner. Always copy native modules (and their `bindings`/`file-uri-to-path` loaders) from the `deps` stage, which has the full unmodified `node_modules`.
+
+**Pattern:**
+```dockerfile
+COPY --from=deps --chown=node:node /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
+COPY --from=deps --chown=node:node /app/node_modules/bindings ./node_modules/bindings
+COPY --from=deps --chown=node:node /app/node_modules/file-uri-to-path ./node_modules/file-uri-to-path
+```
+
+## bash arithmetic with set -e: use `((++N)) || true` not `((N++))`
+
+**Context:** Bash verification scripts using `set -euo pipefail`.
+
+**Gotcha:** `((N++))` with `set -e` exits the script when `N` starts at 0, because post-increment evaluates to the old value (0 = falsy = exit code 1). This silently kills the script at the first increment. Use `(( ++N )) || true` (pre-increment always evaluates to the new non-zero value, `|| true` guards the edge case of going 0→1) or append `|| true` to the increment expression.
