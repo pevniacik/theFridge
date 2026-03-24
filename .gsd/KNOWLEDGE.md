@@ -245,3 +245,13 @@ COPY --from=deps --chown=node:node /app/node_modules/file-uri-to-path ./node_mod
 **Context:** Bash verification scripts using `set -euo pipefail`.
 
 **Gotcha:** `((N++))` with `set -e` exits the script when `N` starts at 0, because post-increment evaluates to the old value (0 = falsy = exit code 1). This silently kills the script at the first increment. Use `(( ++N )) || true` (pre-increment always evaluates to the new non-zero value, `|| true` guards the edge case of going 0→1) or append `|| true` to the increment expression.
+
+## `app/sw.ts` must be excluded from the main `tsconfig.json` or it breaks DOM types
+
+**Context:** Adding a Serwist service worker at `app/sw.ts` with `/// <reference lib="webworker" />` triple-slash directives.
+
+**Gotcha:** Even with `/// <reference no-default-lib="true"/>` at the top, TypeScript still processes `app/sw.ts` as part of the main compilation glob (`**/*.ts`). This causes `ServiceWorkerGlobalScope` to conflict with DOM's `Window`/`Navigator` etc., breaking unrelated components with errors like `Property 'files' does not exist on type 'EventTarget & HTMLInputElement'`.
+
+**Fix:** Add `"app/sw.ts"` to the `exclude` array in `tsconfig.json`. Create a separate `tsconfig.worker.json` that extends the main config but with `"lib": ["esnext", "webworker"]` and only includes `app/sw.ts`.
+
+**Anti-pattern:** Adding `"webworker"` to the main tsconfig's `lib` array — this makes `navigator`, `window`, `document`, `Image`, etc. unavailable in DOM code.

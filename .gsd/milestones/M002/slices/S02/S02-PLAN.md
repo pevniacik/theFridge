@@ -54,7 +54,7 @@
   - Verify: `file public/icons/icon-192.png` reports `192 x 192`; `file public/icons/icon-512.png` reports `512 x 512`
   - Done when: Both icon files are real PNGs at correct dimensions and all three new packages appear in package.json
 
-- [ ] **T02: Wire Serwist service worker, offline page, and tsconfig update** `est:30m`
+- [x] **T02: Wire Serwist service worker, offline page, and tsconfig update** `est:30m`
   - Why: Core PWA integration — the service worker enables precaching and offline fallback (R024); the config wrapper generates `public/sw.js` at build time.
   - Files: `next.config.ts`, `app/sw.ts`, `app/~offline/page.tsx`, `tsconfig.json`
   - Do: Wrap `next.config.ts` with `withSerwistInit({ swSrc: "app/sw.ts", swDest: "public/sw.js", disable: process.env.NODE_ENV === "development", additionalPrecacheEntries: [{ url: "/~offline", revision }] })`; keep `output: "standalone"`. Create `app/sw.ts` with Serwist precache manifest, `skipWaiting`, `clientsClaim`, `navigationPreload`, `defaultCache`, and offline fallback to `/~offline`. Create `app/~offline/page.tsx` as a static page matching app visual style. Add `"webworker"` to `tsconfig.json` `lib` array.
