@@ -19,6 +19,16 @@
 - Real runtime required: yes (Docker build, production build)
 - Human/UAT required: yes (real phone "Add to Home Screen" — documented as manual step)
 
+## Observability / Diagnostics
+
+- **Icon dimensions:** `file public/icons/icon-192.png` and `file public/icons/icon-512.png` — human-readable PNG metadata without running the app.
+- **SW present:** `test -f public/sw.js && wc -c public/sw.js` — confirms the service worker was generated and is non-empty.
+- **Offline route:** `curl -sf http://localhost:3000/~offline | grep -i offline` — confirms the page serves HTML (run against a started container or dev server).
+- **Manifest integrity:** `curl -sf http://localhost:3000/manifest.webmanifest | node -e "const d=require('fs').readFileSync('/dev/stdin','utf8'); JSON.parse(d); console.log('valid JSON')"` — validates manifest is parseable JSON.
+- **Build log:** `npm run build 2>&1 | tail -40` — last 40 lines show Serwist injection status and any compile errors.
+- **Failure surface:** If `npm run build` fails due to SW config, Serwist emits `[serwist]`-prefixed log lines; if icon generation fails, `node scripts/generate-icons.mjs` prints the Sharp error to stderr and exits non-zero.
+- **Redaction:** No secrets are logged; all diagnostics are file paths, HTTP responses, and build output.
+
 ## Verification
 
 - `file public/icons/icon-192.png` reports `192 x 192`
@@ -26,6 +36,7 @@
 - `npm run build` exits 0 and `test -f public/sw.js`
 - `npm run type-check` exits 0
 - `docker compose build` exits 0
+- `wc -c public/sw.js` reports non-zero byte count (confirms SW is non-empty)
 - Human verification: phone on home LAN installs PWA with correct icon and standalone launch (manual, post-slice)
 
 ## Integration Closure
@@ -36,7 +47,7 @@
 
 ## Tasks
 
-- [ ] **T01: Install dependencies and generate real app icons** `est:20m`
+- [x] **T01: Install dependencies and generate real app icons** `est:20m`
   - Why: The 1×1 pixel placeholder icons must be replaced before PWA install shows a meaningful icon. All new npm packages (sharp, @serwist/next, serwist) are installed here to avoid conflicting package.json edits across tasks.
   - Files: `package.json`, `scripts/generate-icons.mjs`, `public/icons/icon-192.png`, `public/icons/icon-512.png`
   - Do: `npm install @serwist/next serwist && npm install -D sharp`; write `scripts/generate-icons.mjs` using sharp to rasterize an SVG (dark rounded rect with fridge emoji, theme colors `#0f1011` / `#f59c2b`) to both sizes; run the script to overwrite placeholders.

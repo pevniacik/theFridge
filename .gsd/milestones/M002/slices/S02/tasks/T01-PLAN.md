@@ -28,6 +28,14 @@ Install all npm packages needed for the PWA slice (`@serwist/next`, `serwist` as
 - [ ] `public/icons/icon-512.png` is a real 512×512 PNG
 - [ ] `scripts/generate-icons.mjs` exists and is re-runnable
 
+## Observability Impact
+
+- **What changes:** `public/icons/icon-192.png` and `public/icons/icon-512.png` grow from 1×1 to real PNGs; `package.json` gains three new entries.
+- **Inspection surface:** `file public/icons/icon-*.png` reports dimensions without running the app; `node -e "require('./package.json').dependencies['@serwist/next']"` confirms the package is registered.
+- **Failure visibility:** `node scripts/generate-icons.mjs` exits non-zero and prints a Sharp error to stderr if icon generation fails; `npm install` prints npm error output to stdout/stderr if network or resolution fails.
+- **Re-runnable:** `scripts/generate-icons.mjs` is idempotent — re-running it overwrites existing icons with correctly-sized PNGs.
+- **Redaction:** No secrets involved; all signals are file metadata and package names.
+
 ## Verification
 
 - `file public/icons/icon-192.png` reports `PNG image data, 192 x 192`
