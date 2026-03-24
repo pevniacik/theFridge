@@ -1,0 +1,61 @@
+# docker-compose.host.yml — Host-network variant for mDNS advertisement
+#
+# Purpose:
+#   Enables `thefridge.local` mDNS/Bonjour hostname resolution on the LAN by
+#   running the container in host network mode, which allows the container to
+#   send multicast UDP packets directly on the host's LAN interface.
+#
+# Linux only:
+#   `network_mode: host` only works as intended on a Linux host.
+#   On macOS, Docker Desktop runs containers inside a Linux VM, so multicast
+#   packets never reach the real LAN and `thefridge.local` will NOT resolve.
+#
+# Usage:
+#   docker compose -f docker-compose.host.yml up -d
+#
+# Port access:
+#   Port 3000 is implicit — the container binds directly to the host network.
+#   Access the app at http://thefridge.local:3000  (Linux LAN)
+#                 or  http://localhost:3000         (direct loopback)
+#
+# Differences from docker-compose.yml (bridge mode):
+#   - network_mode: host   (replaces default bridge networking)
+#   - ports section removed (incompatible with host network mode)
+
+services:
+  fridge-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: thefridge-local
+    network_mode: host
+    environment:
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+      NODE_ENV: production
+      GOOGLE_AI_API_KEY: ${GOOGLE_AI_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://127.0.0.1:3000/api/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    volumes:
+      - fridge_data:/app/data
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "25m"
+        max-file: "5"
+
+volumes:
+  fridge_data:
+    name: thefridge_data

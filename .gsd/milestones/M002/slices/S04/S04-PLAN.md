@@ -47,7 +47,7 @@
   - Verify: `npm run type-check` exits 0; `npm run build` exits 0; `ls .next/standalone/node_modules/bonjour-service` confirms nft tracing
   - Done when: type-check clean, build succeeds, `bonjour-service` present in standalone node_modules
 
-- [ ] **T02: Create host-mode compose file and mDNS verification script** `est:30m`
+- [x] **T02: Create host-mode compose file and mDNS verification script** `est:30m`
   - Why: Provides the Docker networking configuration required for mDNS multicast to reach the LAN, and an automated verification script that exercises R031. Keeps the existing bridge-mode compose file intact for S01–S03 operators.
   - Files: `docker-compose.host.yml`, `scripts/verify-s04-mdns.sh`
   - Do: Create `docker-compose.host.yml` cloning the structure of `docker-compose.yml` but replacing `ports:` with `network_mode: host`. Add comments documenting the macOS limitation. Create `scripts/verify-s04-mdns.sh` that: (1) builds and starts with `docker compose -f docker-compose.host.yml up -d`, (2) waits for health endpoint, (3) inspects container for host network mode, (4) checks logs for `[mdns]` line, (5) on Linux only: pings `thefridge.local` and curls the health endpoint via hostname, (6) tears down. Script must detect OS and skip/warn for macOS on checks 5–6.

@@ -322,3 +322,13 @@ outputFileTracingIncludes: {
 },
 ```
 This is the canonical Next.js escape hatch. Required for any Node.js-only package loaded via dynamic import inside a production/runtime guard.
+
+## Docker `network_mode: host` on macOS: loopback isolation prevents host-side curl
+
+**Context:** M002 S04 — running the app container with `network_mode: host` on Docker Desktop for macOS.
+
+**Gotcha:** Docker Desktop on macOS runs all containers inside a hidden Linux VM. With `network_mode: host`, the container binds port 3000 to the Linux VM's `127.0.0.1`, not the macOS host's. Therefore `curl http://127.0.0.1:3000/...` from the macOS shell will fail even though the container is healthy. The container's own Docker healthcheck (which runs inside the VM) works fine.
+
+**Fix:** In verification scripts, poll `docker inspect <container> --format '{{.State.Health.Status}}'` instead of curling from the host when `network_mode: host` is used. The compose healthcheck is already configured to use `http://127.0.0.1:3000/api/health` internally.
+
+**Linux:** On a real Linux host, `network_mode: host` shares the host's actual network stack, so curl from the shell works as expected.
