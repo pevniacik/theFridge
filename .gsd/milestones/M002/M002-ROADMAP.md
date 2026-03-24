@@ -63,7 +63,7 @@ This milestone is complete only when all are true:
 - [x] **S03: Last-Used Fridge Memory** `risk:low` `depends:[S02]`
   > After this: tapping the home screen icon opens directly to the last fridge context the user visited; "switch fridge" navigation back to the list is always reachable from the header
 
-- [ ] **S04: mDNS Hostname** `risk:medium` `depends:[S01]`
+- [x] **S04: mDNS Hostname** `risk:medium` `depends:[S01]`
   > After this: `http://thefridge.local:3000` resolves on the home network; `bonjour-service` advertises the hostname from the container using `network_mode: host`
 
 ## Boundary Map

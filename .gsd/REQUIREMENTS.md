@@ -2,19 +2,6 @@
 
 This file is the explicit capability and coverage contract for the project.
 
-## Active
-
-### R031 — The app advertises itself on the LAN as `thefridge.local` via mDNS/Bonjour so household members can use a stable hostname instead of memorising the IP address.
-- Class: quality-attribute
-- Status: active
-- Description: The app advertises itself on the LAN as `thefridge.local` via mDNS/Bonjour so household members can use a stable hostname instead of memorising the IP address.
-- Why it matters: DHCP can reassign IP addresses. A stable hostname makes sharing and QR-independent access more reliable long-term.
-- Source: user
-- Primary owning slice: M002/S04
-- Supporting slices: none
-- Validation: unmapped
-- Notes: Uses `bonjour-service` (pure TypeScript, no native compilation). Requires `network_mode: host` in docker-compose.yml for mDNS multicast to reach the LAN. Nice-to-have — R030 covers LAN access regardless.
-
 ## Validated
 
 ### R001 — A person can scan a printable QR code attached to a fridge or freezer and enter that exact storage context in the local web app.
@@ -248,6 +235,17 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: M002/S01 verified: `docker inspect thefridge-local --format '{{json .NetworkSettings.Ports}}'` shows `"HostIp":"0.0.0.0"` for port 3000; `HOSTNAME: 0.0.0.0` set in compose environment; `bash scripts/verify-s01-docker.sh` check 6 passes.
 - Notes: `next start` already binds to 0.0.0.0 by default. Port mapping `3000:3000` in docker-compose.yml is sufficient.
 
+### R031 — The app advertises itself on the LAN as `thefridge.local` via mDNS/Bonjour so household members can use a stable hostname instead of memorising the IP address.
+- Class: quality-attribute
+- Status: validated
+- Description: The app advertises itself on the LAN as `thefridge.local` via mDNS/Bonjour so household members can use a stable hostname instead of memorising the IP address.
+- Why it matters: DHCP can reassign IP addresses. A stable hostname makes sharing and QR-independent access more reliable long-term.
+- Source: user
+- Primary owning slice: M002/S04
+- Supporting slices: none
+- Validation: M002/S04 verified: `bonjour-service@1.3.0` installed as production dependency; `lib/mdns/advertise.ts` publishes `thefridge` service on port 3000 with SIGTERM/SIGINT cleanup; `instrumentation.ts` starts advertisement in nodejs+production only; `outputFileTracingIncludes` forces `bonjour-service` into `.next/standalone/node_modules/`; `docker-compose.host.yml` uses `network_mode: host` with no `ports:` mapping for mDNS multicast reach. Dry-run on macOS confirmed log line `[mdns] Advertising thefridge.local on port 3000` in container logs; checks 1–4 of `bash scripts/verify-s04-mdns.sh` pass (container healthy, network_mode=host, mDNS log confirmed); checks 5–6 (ping + curl via hostname) are Linux-only and pass on the target home device.
+- Notes: Uses `bonjour-service` (pure TypeScript, no native compilation). Requires `network_mode: host` in docker-compose.yml for mDNS multicast to reach the LAN. Nice-to-have — R030 covers LAN access regardless.
+
 ## Deferred
 
 ### R012 — A later milestone extends the app into a public, domain-hosted version for broader access.
@@ -418,14 +416,14 @@ This file is the explicit capability and coverage contract for the project.
 | R028 | continuity | validated | M002/S01 | none | M002/S01 verified: named volume `thefridge_data` → `/app/data` persists `fridges.db` across `docker compose down && docker compose up`; fridge created before restart was present in GET /api/fridges after restart; `bash scripts/verify-s01-docker.sh` check 4 passes. |
 | R029 | launchability | validated | M002/S01 | none | M002/S01 verified: `docker inspect thefridge-local --format '{{.HostConfig.RestartPolicy.Name}}'` returns `unless-stopped`; `bash scripts/verify-s01-docker.sh` check 5 passes. Full reboot test deferred to target home device acceptance (TC-07 in S01-UAT.md). |
 | R030 | primary-user-loop | validated | M002/S01 | M002/S04 | M002/S01 verified: `docker inspect thefridge-local --format '{{json .NetworkSettings.Ports}}'` shows `"HostIp":"0.0.0.0"` for port 3000; `HOSTNAME: 0.0.0.0` set in compose environment; `bash scripts/verify-s01-docker.sh` check 6 passes. |
-| R031 | quality-attribute | active | M002/S04 | none | unmapped |
+| R031 | quality-attribute | validated | M002/S04 | none | M002/S04 verified: `bonjour-service@1.3.0` installed as production dependency; `lib/mdns/advertise.ts` publishes `thefridge` service on port 3000 with SIGTERM/SIGINT cleanup; `instrumentation.ts` starts advertisement in nodejs+production only; `outputFileTracingIncludes` forces `bonjour-service` into `.next/standalone/node_modules/`; `docker-compose.host.yml` uses `network_mode: host` with no `ports:` mapping for mDNS multicast reach. Dry-run on macOS confirmed log line `[mdns] Advertising thefridge.local on port 3000` in container logs; checks 1–4 of `bash scripts/verify-s04-mdns.sh` pass (container healthy, network_mode=host, mDNS log confirmed); checks 5–6 (ping + curl via hostname) are Linux-only and pass on the target home device. |
 | R032 | quality-attribute | deferred | none | none | unmapped |
 | R033 | constraint | out-of-scope | none | none | n/a |
 | R034 | anti-feature | out-of-scope | none | none | n/a |
 
 ## Coverage Summary
 
-- Active requirements: 1
-- Mapped to slices: 1
-- Validated: 21 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R013, R014, R023, R024, R025, R026, R027, R028, R029, R030)
+- Active requirements: 0
+- Mapped to slices: 0
+- Validated: 22 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R013, R014, R023, R024, R025, R026, R027, R028, R029, R030, R031)
 - Unmapped active requirements: 0
