@@ -308,3 +308,17 @@ export default async function Page() {
 **Gotcha:** Using `router.push` for a redirect-on-mount means pressing Back from the destination returns to the redirecting page, which immediately redirects forward again — a redirect loop from the user's perspective.
 
 **Fix:** Always use `router.replace` for redirects that should not create a history entry. The user's Back button skips the redirect page entirely and goes to wherever they came from.
+
+## Next.js nft cannot trace dynamic imports behind NODE_ENV/NEXT_RUNTIME guards
+
+**Context:** M002/S04 — `instrumentation.ts` uses `dynamic import()` inside `if (NODE_ENV === 'production' && NEXT_RUNTIME === 'nodejs')`.
+
+**Gotcha:** Next.js node-file-trace (nft) performs static analysis to build the standalone output. It cannot evaluate runtime guard expressions (`NODE_ENV === 'production'`), so dynamic imports hidden behind such guards are never followed. The package will be absent from `.next/standalone/node_modules/` and the runtime call silently fails.
+
+**Fix:** Add `outputFileTracingIncludes` in `next.config.ts` to explicitly include the package:
+```ts
+outputFileTracingIncludes: {
+  "**": ["./node_modules/your-package/**"],
+},
+```
+This is the canonical Next.js escape hatch. Required for any Node.js-only package loaded via dynamic import inside a production/runtime guard.

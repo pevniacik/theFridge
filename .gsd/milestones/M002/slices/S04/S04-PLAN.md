@@ -40,7 +40,7 @@
 
 ## Tasks
 
-- [ ] **T01: Add mDNS advertisement module and Next.js instrumentation hook** `est:30m`
+- [x] **T01: Add mDNS advertisement module and Next.js instrumentation hook** `est:30m`
   - Why: Creates the application-level mDNS capability — the `bonjour-service` dependency, the advertisement module, and the instrumentation hook that starts it in production. This is the core of R031.
   - Files: `package.json`, `lib/mdns/advertise.ts`, `instrumentation.ts`
   - Do: Install `bonjour-service@^1.3.0` as a dependency. Create `lib/mdns/advertise.ts` exporting `startMdnsAdvertisement()` that creates a Bonjour instance, publishes `{name:'thefridge', type:'http', port}`, logs `[mdns] Advertising...`, and registers SIGTERM/SIGINT cleanup. Create `instrumentation.ts` at project root with `register()` that guards on `NEXT_RUNTIME === 'nodejs'` and `NODE_ENV === 'production'` before dynamically importing the advertise module. Run `npm install` then `npm run type-check` and `npm run build`.

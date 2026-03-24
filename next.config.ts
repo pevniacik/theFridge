@@ -19,6 +19,13 @@ const withSerwist = withSerwistInit({
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // bonjour-service is loaded via dynamic import() inside instrumentation.ts only
+  // when NEXT_RUNTIME=nodejs && NODE_ENV=production. The runtime guard prevents
+  // nft (node-file-trace) from statically discovering the import, so we force-include
+  // the package and all its transitive files here.
+  outputFileTracingIncludes: {
+    "**": ["./node_modules/bonjour-service/**"],
+  },
 };
 
 export default withSerwist(nextConfig);
