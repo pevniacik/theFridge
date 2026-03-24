@@ -4,7 +4,7 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Active
 
-### R023 — PWA launches standalone from home screen with real app icons
+### R023 — The web app can be installed to a phone's home screen and launches in standalone mode with a real icon — no browser chrome visible.
 - Class: primary-user-loop
 - Status: active
 - Description: The web app can be installed to a phone's home screen and launches in standalone mode with a real icon — no browser chrome visible.
@@ -15,7 +15,7 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: unmapped
 - Notes: Requires a valid PWA manifest (already exists as `app/manifest.ts`), a service worker registered on the page, and real icon files (currently 1×1 pixel placeholders).
 
-### R024 — Service worker caches app shell for instant load and offline fallback
+### R024 — A service worker precaches the Next.js app shell so repeat visits load instantly. When the server is unreachable, a meaningful offline page is shown rather than a browser error.
 - Class: launchability
 - Status: active
 - Description: A service worker precaches the Next.js app shell so repeat visits load instantly. When the server is unreachable, a meaningful offline page is shown rather than a browser error.
@@ -26,7 +26,7 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: unmapped
 - Notes: App shell caching only — API responses (inventory data) are not cached offline. Serwist (`@serwist/next`) is the chosen library.
 
-### R025 — PWA remembers last-used fridge and opens directly to it
+### R025 — When a household member taps the home screen icon, the PWA opens directly to the last-used fridge context rather than the landing page.
 - Class: primary-user-loop
 - Status: active
 - Description: When a household member taps the home screen icon, the PWA opens directly to the last-used fridge context rather than the landing page.
@@ -37,7 +37,7 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: unmapped
 - Notes: Stored in `localStorage` — client-side, no server state required. Written on every fridge context visit.
 
-### R026 — User can navigate back to fridge list and switch fridges from the PWA
+### R026 — Despite the last-used fridge shortcut, navigation back to the fridge list remains accessible so users can switch storage contexts.
 - Class: continuity
 - Status: active
 - Description: Despite the last-used fridge shortcut, navigation back to the fridge list remains accessible so users can switch storage contexts.
@@ -48,51 +48,7 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: unmapped
 - Notes: The existing global header link to `/` already handles this; the slice just needs to ensure it survives the PWA start_url redirect logic.
 
-### R027 — Docker Compose provides one-command setup on any Linux/Mac home device
-- Class: launchability
-- Status: active
-- Description: A single `docker compose up` command builds and starts the app on any Linux or macOS device with Docker installed — no `npm install`, no Node version management.
-- Why it matters: The target hosting device (Pi, Mac Mini, old laptop) may not have Node installed. Docker makes the environment portable and reproducible.
-- Source: user
-- Primary owning slice: M002/S01
-- Supporting slices: none
-- Validation: unmapped
-- Notes: Multi-stage Dockerfile to minimise image size. `better-sqlite3` requires native compilation during build — handled inside the Docker build layer, not on the host. `output: 'standalone'` in next.config.ts reduces production image size.
-
-### R028 — SQLite data persists across container restarts and image rebuilds
-- Class: continuity
-- Status: active
-- Description: The `data/` directory containing `fridges.db` is volume-mounted so inventory data survives `docker compose down`, image rebuilds, and host reboots.
-- Why it matters: Losing inventory data on a container restart would be catastrophic for household trust.
-- Source: inferred
-- Primary owning slice: M002/S01
-- Supporting slices: none
-- Validation: unmapped
-- Notes: Volume mount: `./data:/app/data`. DB path must remain `data/fridges.db` relative to the app root.
-
-### R029 — Container auto-starts on host device boot
-- Class: launchability
-- Status: active
-- Description: The Docker container restarts automatically if the host device reboots, with no manual intervention required.
-- Why it matters: The host device (Pi, Mac Mini) may reboot due to updates or power events. Household members should not need to SSH in to restart the app.
-- Source: user
-- Primary owning slice: M002/S01
-- Supporting slices: none
-- Validation: unmapped
-- Notes: `restart: unless-stopped` in docker-compose.yml. Works with Docker's own restart manager — no systemd unit needed.
-
-### R030 — App is accessible from any device on the home LAN via the container
-- Class: primary-user-loop
-- Status: active
-- Description: The container binds to `0.0.0.0:3000` so any phone or laptop on the home Wi-Fi can reach the app at `http://<LAN-IP>:3000`.
-- Why it matters: This is the core access model for a household app. A container that only binds to localhost is useless for other family members.
-- Source: inferred
-- Primary owning slice: M002/S01
-- Supporting slices: M002/S04
-- Validation: unmapped
-- Notes: `next start` already binds to 0.0.0.0 by default. Port mapping `3000:3000` in docker-compose.yml is sufficient.
-
-### R031 — mDNS advertises `thefridge.local` hostname on the LAN
+### R031 — The app advertises itself on the LAN as `thefridge.local` via mDNS/Bonjour so household members can use a stable hostname instead of memorising the IP address.
 - Class: quality-attribute
 - Status: active
 - Description: The app advertises itself on the LAN as `thefridge.local` via mDNS/Bonjour so household members can use a stable hostname instead of memorising the IP address.
@@ -248,6 +204,50 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: S02 verified: low-confidence draft items show an amber "?" badge in the review UI; API returns 404 for invalid fridge IDs and 400 for missing photos.
 - Notes: The app should behave like a trusted assistant, not an invisible automation layer.
 
+### R027 — A single `docker compose up` command builds and starts the app on any Linux or macOS device with Docker installed — no `npm install`, no Node version management.
+- Class: launchability
+- Status: validated
+- Description: A single `docker compose up` command builds and starts the app on any Linux or macOS device with Docker installed — no `npm install`, no Node version management.
+- Why it matters: The target hosting device (Pi, Mac Mini, old laptop) may not have Node installed. Docker makes the environment portable and reproducible.
+- Source: user
+- Primary owning slice: M002/S01
+- Supporting slices: none
+- Validation: M002/S01 verified: `docker compose build` succeeds (52s multi-stage build with `better-sqlite3` native compilation); `GET /api/health` returns `{"status":"ok"}` from inside the running container; `bash scripts/verify-s01-docker.sh` → 6/6 checks pass.
+- Notes: Multi-stage Dockerfile to minimise image size. `better-sqlite3` requires native compilation during build — handled inside the Docker build layer, not on the host. `output: 'standalone'` in next.config.ts reduces production image size.
+
+### R028 — The `data/` directory containing `fridges.db` is volume-mounted so inventory data survives `docker compose down`, image rebuilds, and host reboots.
+- Class: continuity
+- Status: validated
+- Description: The `data/` directory containing `fridges.db` is volume-mounted so inventory data survives `docker compose down`, image rebuilds, and host reboots.
+- Why it matters: Losing inventory data on a container restart would be catastrophic for household trust.
+- Source: inferred
+- Primary owning slice: M002/S01
+- Supporting slices: none
+- Validation: M002/S01 verified: named volume `thefridge_data` → `/app/data` persists `fridges.db` across `docker compose down && docker compose up`; fridge created before restart was present in GET /api/fridges after restart; `bash scripts/verify-s01-docker.sh` check 4 passes.
+- Notes: Volume mount: `./data:/app/data`. DB path must remain `data/fridges.db` relative to the app root.
+
+### R029 — The Docker container restarts automatically if the host device reboots, with no manual intervention required.
+- Class: launchability
+- Status: validated
+- Description: The Docker container restarts automatically if the host device reboots, with no manual intervention required.
+- Why it matters: The host device (Pi, Mac Mini) may reboot due to updates or power events. Household members should not need to SSH in to restart the app.
+- Source: user
+- Primary owning slice: M002/S01
+- Supporting slices: none
+- Validation: M002/S01 verified: `docker inspect thefridge-local --format '{{.HostConfig.RestartPolicy.Name}}'` returns `unless-stopped`; `bash scripts/verify-s01-docker.sh` check 5 passes. Full reboot test deferred to target home device acceptance (TC-07 in S01-UAT.md).
+- Notes: `restart: unless-stopped` in docker-compose.yml. Works with Docker's own restart manager — no systemd unit needed.
+
+### R030 — The container binds to `0.0.0.0:3000` so any phone or laptop on the home Wi-Fi can reach the app at `http://<LAN-IP>:3000`.
+- Class: primary-user-loop
+- Status: validated
+- Description: The container binds to `0.0.0.0:3000` so any phone or laptop on the home Wi-Fi can reach the app at `http://<LAN-IP>:3000`.
+- Why it matters: This is the core access model for a household app. A container that only binds to localhost is useless for other family members.
+- Source: inferred
+- Primary owning slice: M002/S01
+- Supporting slices: M002/S04
+- Validation: M002/S01 verified: `docker inspect thefridge-local --format '{{json .NetworkSettings.Ports}}'` shows `"HostIp":"0.0.0.0"` for port 3000; `HOSTNAME: 0.0.0.0` set in compose environment; `bash scripts/verify-s01-docker.sh` check 6 passes.
+- Notes: `next start` already binds to 0.0.0.0 by default. Port mapping `3000:3000` in docker-compose.yml is sufficient.
+
 ## Deferred
 
 ### R012 — A later milestone extends the app into a public, domain-hosted version for broader access.
@@ -305,7 +305,7 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: unmapped
 - Notes: M001 stays focused on grounded "use what I have" suggestions.
 
-### R032 — Full offline inventory browsing with cached API data
+### R032 — Household members can browse their last-seen inventory state when the server is unreachable.
 - Class: quality-attribute
 - Status: deferred
 - Description: Household members can browse their last-seen inventory state when the server is unreachable.
@@ -362,7 +362,7 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: n/a
 - Notes: Barcode support could be revisited later if it helps, but it is not the core intake model.
 
-### R033 — GUI-only server installation (no terminal at all)
+### R033 — A completely terminal-free installation experience for the server operator.
 - Class: constraint
 - Status: out-of-scope
 - Description: A completely terminal-free installation experience for the server operator.
@@ -373,7 +373,7 @@ This file is the explicit capability and coverage contract for the project.
 - Validation: n/a
 - Notes: The person running the server (the user) is comfortable with a terminal. Only household members using phones need zero friction.
 
-### R034 — Bootstrap QR for app discovery
+### R034 — A generic "find the app" QR code separate from the per-fridge QR codes.
 - Class: anti-feature
 - Status: out-of-scope
 - Description: A generic "find the app" QR code separate from the per-fridge QR codes.
@@ -388,20 +388,20 @@ This file is the explicit capability and coverage contract for the project.
 
 | ID | Class | Status | Primary owner | Supporting | Proof |
 |---|---|---|---|---|---|
-| R001 | primary-user-loop | validated | M001/S01 | M001/S06 | S01 verified |
-| R002 | core-capability | validated | M001/S01 | M001/S06 | S01 verified |
-| R003 | core-capability | validated | M001/S02 | M001/S06 | S02 verified |
-| R004 | failure-visibility | validated | M001/S02 | M001/S03, M001/S06 | S02 verified |
-| R005 | primary-user-loop | validated | M001/S03 | M001/S04, M001/S05, M001/S06 | S03 verified |
-| R006 | core-capability | validated | M001/S03 | M001/S05, M001/S06 | S03 verified |
-| R007 | continuity | validated | M001/S04 | M001/S06 | S04 verified |
-| R008 | primary-user-loop | validated | M001/S04 | M001/S05, M001/S06 | S04 verified |
-| R009 | launchability | validated | M001/S05 | M001/S03, M001/S04, M001/S06 | S05 verified |
-| R010 | differentiator | validated | M001/S05 | M001/S06 | S05 verified |
-| R011 | constraint | validated | M001/S06 | M001/S01 | S06 verified |
+| R001 | primary-user-loop | validated | M001/S01 | M001/S06 | S01 verified: valid fridge IDs resolve the correct storage-context page at /fridges/[fridgeId]; the QR URL encodes the exact same route; opening the QR URL loads the correct context. All 7 slice checks pass. |
+| R002 | core-capability | validated | M001/S01 | M001/S06 | S01 verified: the app generates SVG QR codes server-side (lib/qr/generate.ts) encoding each fridge/freezer's full context URL. QR is rendered on the storage-context page and is print-ready. QR URL was confirmed to match the route contract via curl inspection. |
+| R003 | core-capability | validated | M001/S02 | M001/S06 | S02 verified: POST /api/intake/[fridgeId] accepts a photo upload and returns a structured JSON draft with named items, quantities, units, and confidence fields. Stub returns 3 items when OPENAI_API_KEY is absent; OpenAI gpt-4o-mini call is wired for when the key is present. curl test confirmed: 3 items returned for valid fridge + photo input. |
+| R004 | failure-visibility | validated | M001/S02 | M001/S03, M001/S06 | S02 verified: IntakeSection renders an editable review grid (name, quantity, unit inputs + delete button per row) before any item reaches intake_drafts. Confirm step is explicit and gated - no item is written to the DB without user action. Browser test: edited a name, deleted a row, confirmed - only the modified items were persisted. |
+| R005 | primary-user-loop | validated | M001/S03 | M001/S04, M001/S05, M001/S06 | S03 verified: inventory_items table persists item-level records scoped to each fridge via FK. After uploading a grocery photo, confirming the draft, and promoting via InventorySection, sqlite3 confirms individual named rows (Greek Yogurt, Butter) with correct fridge_id. listInventoryItems returns the active set per fridge. Browser renders the inventory list with name/quantity/unit per item. |
+| R006 | core-capability | validated | M001/S03 | M001/S05, M001/S06 | S03 verified: inventory_items schema includes expiry_date (TEXT nullable) and expiry_estimated (INTEGER 0/1). Quick-pick day buttons (3d/7d/14d/30d) set expiry_estimated=1; explicit date input sets expiry_estimated=0; blank expiry is valid (null). DB confirmed: promoted row via 7d quick-pick shows expiry_date='2026-03-28', expiry_estimated=1; row with no date shows expiry_date=null, expiry_estimated=0. Amber 'est.' badge renders in the inventory list for estimated entries. |
+| R007 | continuity | validated | M001/S04 | M001/S06 | S04 verified: updateInventoryItem store function UPDATEs name/quantity/unit/expiry_date/expiry_estimated scoped by id AND fridge_id, setting updated_at=datetime('now'). setInventoryItemStatus flips status to 'used' or 'discarded' with the same dual-key scoping. Browser test on Kitchen Fridge (ZPPo56GIYQ): edited "Greek Yogurt" → name persisted in DB with fresh updated_at; marked "Butter" used → status='used' in DB; marked item discarded → status='discarded' in DB. No rows are DELETEd - full audit trail preserved. Server Action error path returns { success: false, error: '...' } rendered as a per-row red banner. [inventory] log lines confirmed in server console for all mutation types. |
+| R008 | primary-user-loop | validated | M001/S04 | M001/S05, M001/S06 | S04 verified: After each mutation (edit save, mark used, mark discarded), router.refresh() wrapped in startTransition() re-reads server truth from SQLite. The active inventory list reflects only status='active' rows - used/discarded items disappear immediately after the status flip. DB and UI are consistent: sqlite3 query confirms status change, browser confirms count decrease. listInventoryItems WHERE status='active' remains the authoritative read model. |
+| R009 | launchability | validated | M001/S05 | M001/S03, M001/S04, M001/S06 | S05 verified: analyzeInventory() in lib/inventory/analysis.ts classifies active inventory items into 5 urgency buckets (expired, expiring-soon, estimated-expiry-soon, forgotten, ok) using a priority-ordered if-else chain. StatusSection.tsx renders a "needs attention" section with urgency-sorted alert rows showing item name, badge, and timing copy (e.g. "expired 2 days ago", "not touched in 18 days"). Browser verification on mixed-status-fridge confirmed alert rows match actual DB rows via sqlite3 query. Empty fridge shows clean empty state with no alert section rendered. |
+| R010 | differentiator | validated | M001/S05 | M001/S06 | S05 verified: generateSuggestions() in lib/inventory/analysis.ts produces 0-3 SuggestionCard objects grounded in actual item names from inventory, with urgency-driven cards prioritizing expired/expiring items first. StatusSection.tsx renders a "cooking ideas" section with cards showing title, description referencing real item names, and ingredient chips. Urgency-driven cards get a warm amber gradient treatment. Browser verification on mixed-status-fridge confirmed ingredient names in suggestion cards match actual DB row names. Cook tonight card only appears when 3+ active items exist; Rediscover card only appears when forgotten items exist. |
+| R011 | constraint | validated | M001/S06 | M001/S01 | S06/T03 final proof 2026-03-23: `bash scripts/verify-s06-lan.sh 192.168.1.22 ZPPo56GIYQ` → 6/6 checks passed. |
 | R012 | launchability | deferred | none | none | unmapped |
-| R013 | primary-user-loop | validated | M001/S04 | M001/S06 | S04 verified |
-| R014 | failure-visibility | validated | M001/S02 | M001/S04, M001/S06 | S02 verified |
+| R013 | primary-user-loop | validated | M001/S04 | M001/S06 | S04 verified: All mutations are scoped exclusively by item.id AND fridge_id - cross-fridge writes are structurally impossible. |
+| R014 | failure-visibility | validated | M001/S02 | M001/S04, M001/S06 | S02 verified: low-confidence draft items show an amber "?" badge in the review UI; API returns 404 for invalid fridge IDs and 400 for missing photos. |
 | R015 | quality-attribute | deferred | none | none | unmapped |
 | R016 | differentiator | deferred | none | none | unmapped |
 | R017 | admin/support | deferred | none | none | unmapped |
@@ -414,10 +414,10 @@ This file is the explicit capability and coverage contract for the project.
 | R024 | launchability | active | M002/S02 | none | unmapped |
 | R025 | primary-user-loop | active | M002/S03 | none | unmapped |
 | R026 | continuity | active | M002/S03 | none | unmapped |
-| R027 | launchability | active | M002/S01 | none | unmapped |
-| R028 | continuity | active | M002/S01 | none | unmapped |
-| R029 | launchability | active | M002/S01 | none | unmapped |
-| R030 | primary-user-loop | active | M002/S01 | M002/S04 | unmapped |
+| R027 | launchability | validated | M002/S01 | none | M002/S01 verified: `docker compose build` succeeds (52s multi-stage build with `better-sqlite3` native compilation); `GET /api/health` returns `{"status":"ok"}` from inside the running container; `bash scripts/verify-s01-docker.sh` → 6/6 checks pass. |
+| R028 | continuity | validated | M002/S01 | none | M002/S01 verified: named volume `thefridge_data` → `/app/data` persists `fridges.db` across `docker compose down && docker compose up`; fridge created before restart was present in GET /api/fridges after restart; `bash scripts/verify-s01-docker.sh` check 4 passes. |
+| R029 | launchability | validated | M002/S01 | none | M002/S01 verified: `docker inspect thefridge-local --format '{{.HostConfig.RestartPolicy.Name}}'` returns `unless-stopped`; `bash scripts/verify-s01-docker.sh` check 5 passes. Full reboot test deferred to target home device acceptance (TC-07 in S01-UAT.md). |
+| R030 | primary-user-loop | validated | M002/S01 | M002/S04 | M002/S01 verified: `docker inspect thefridge-local --format '{{json .NetworkSettings.Ports}}'` shows `"HostIp":"0.0.0.0"` for port 3000; `HOSTNAME: 0.0.0.0` set in compose environment; `bash scripts/verify-s01-docker.sh` check 6 passes. |
 | R031 | quality-attribute | active | M002/S04 | none | unmapped |
 | R032 | quality-attribute | deferred | none | none | unmapped |
 | R033 | constraint | out-of-scope | none | none | n/a |
@@ -425,7 +425,7 @@ This file is the explicit capability and coverage contract for the project.
 
 ## Coverage Summary
 
-- Active requirements: 9 (R023–R031)
-- Mapped to slices: 9
-- Validated: 13 (R001–R011, R013–R014)
+- Active requirements: 5
+- Mapped to slices: 5
+- Validated: 17 (R001, R002, R003, R004, R005, R006, R007, R008, R009, R010, R011, R013, R014, R027, R028, R029, R030)
 - Unmapped active requirements: 0

@@ -54,7 +54,7 @@ This milestone is complete only when all are true:
 
 ## Slices
 
-- [ ] **S01: Docker Production Container** `risk:high` `depends:[]`
+- [x] **S01: Docker Production Container** `risk:high` `depends:[]`
   > After this: `docker compose up` on the dev machine (and then on a target home device) builds and starts the app; SQLite data survives restart; `http://<LAN-IP>:3000` serves the full M001 feature set; container auto-restarts on boot
 
 - [ ] **S02: PWA Shell & Home Screen** `risk:medium` `depends:[S01]`
