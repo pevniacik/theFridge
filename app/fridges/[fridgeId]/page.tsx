@@ -12,6 +12,7 @@ import { getFridgeById } from "@/lib/fridges/store";
 import { listPendingDrafts, listInventoryItems } from "@/lib/inventory/store";
 import { analyzeInventory, generateSuggestions } from "@/lib/inventory/analysis";
 import QrCode from "@/components/QrCode";
+import { buildFridgeUrl } from "@/lib/qr/generate";
 import { resolveQrBaseUrl } from "@/lib/qr/origin";
 import { getActiveProvider } from "@/lib/settings/store";
 import IntakeSection from "./IntakeSection";
@@ -114,6 +115,7 @@ export default async function FridgeContextPage({ params }: Props) {
 
   // ── Found ─────────────────────────────────────────────────────────────────
   const baseUrl = await getBaseUrl();
+  const qrTargetUrl = buildFridgeUrl(baseUrl, fridge.id);
   const typeLabel = fridge.type === "fridge" ? "Refrigerator" : "Freezer";
   const typeColor = fridge.type === "fridge" ? "var(--color-cold)" : "#a78bfa";
   const pendingDrafts = listPendingDrafts(fridge.id);
@@ -228,6 +230,38 @@ export default async function FridgeContextPage({ params }: Props) {
             >
               instructions
             </p>
+            <div
+              style={{
+                marginBottom: "1rem",
+                padding: "0.875rem 1rem",
+                borderRadius: "var(--radius-card)",
+                border: "1px solid var(--color-border)",
+                background: "rgba(255,255,255,0.02)",
+              }}
+            >
+              <p
+                style={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: "0.6875rem",
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  color: "var(--color-muted)",
+                  marginBottom: "0.5rem",
+                }}
+              >
+                QR target
+              </p>
+              <p
+                style={{
+                  fontSize: "0.8125rem",
+                  color: "var(--color-text)",
+                  lineHeight: 1.5,
+                  wordBreak: "break-all",
+                }}
+              >
+                {qrTargetUrl}
+              </p>
+            </div>
             <ol
               style={{
                 display: "flex",

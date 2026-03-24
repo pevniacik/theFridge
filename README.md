@@ -19,7 +19,8 @@ Notes:
 - Dev server binds to all network interfaces (`0.0.0.0:3000`) so it is reachable from other devices on the home Wi-Fi.
 - Dev server auto-falls back from port 3000 if occupied.
 - AI extraction uses a deterministic stub until you configure a provider in Settings.
-- `QR_BASE_URL` is optional; use it to force QR links to a LAN-reachable origin.
+- `QR_BASE_URL` is optional; use it to force QR links to a specific origin.
+- If the incoming host is `0.0.0.0`, `localhost`, or `127.0.0.1`, QR generation now automatically falls back to the machine's detected LAN IPv4 address instead of baking an unusable URL.
 - SQLite database is created automatically at `data/fridges.db`.
 
 ## LAN Reachability Verification
@@ -102,8 +103,9 @@ App URL:
 
 Home-network access:
 - Open the app from another device using `http://<your-lan-ip>:3000`
-- QR origin is resolved from forwarded host/proto headers first, then request host
-- If QR still points to `localhost`, set `QR_BASE_URL=http://<your-lan-ip>:3000`
+- QR origin uses this precedence: `QR_BASE_URL` → forwarded host/proto → request host
+- If the observed host is `0.0.0.0`, `localhost`, or `127.0.0.1`, the app replaces it with the machine's detected LAN IPv4 address
+- If auto-detection picks the wrong address on a multi-network machine, set `QR_BASE_URL=http://<your-lan-ip>:3000`
 
 Persistence:
 - SQLite data is stored in Docker volume `thefridge_data` mounted to `/app/data`.
@@ -162,7 +164,8 @@ The compose setup includes:
 
 - Access from other devices using `http://<your-lan-ip>:3000`
 - QR generation uses this precedence: `QR_BASE_URL` -> `x-forwarded-host`/`x-forwarded-proto` -> request `host`
-- If phone scans still fail due `localhost` links, set `QR_BASE_URL` and restart app
+- `0.0.0.0`, `localhost`, and `127.0.0.1` are treated as bind/local addresses, not QR destinations; the app swaps them for the detected LAN IPv4 when possible
+- If auto-detection is wrong or you want a stable explicit origin, set `QR_BASE_URL` and restart the app
 - If server IP/port changes, regenerate and reprint QR codes
 
 ## QR Troubleshooting (Phone Scans)

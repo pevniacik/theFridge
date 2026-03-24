@@ -49,8 +49,28 @@ describe("resolveQrBaseUrl", () => {
     expect(baseUrl).toBe("http://192.168.1.22:3005");
   });
 
-  it("falls back to localhost:3000 when no host header is present", () => {
-    const baseUrl = resolveQrBaseUrl(makeHeaders({}));
+  it("replaces 0.0.0.0 with the detected LAN IP", () => {
+    const baseUrl = resolveQrBaseUrl(
+      makeHeaders({ host: "0.0.0.0:3000" }),
+      undefined,
+      "192.168.1.22"
+    );
+
+    expect(baseUrl).toBe("http://192.168.1.22:3000");
+  });
+
+  it("replaces localhost with the detected LAN IP", () => {
+    const baseUrl = resolveQrBaseUrl(
+      makeHeaders({ host: "localhost:3005" }),
+      undefined,
+      "192.168.1.33"
+    );
+
+    expect(baseUrl).toBe("http://192.168.1.33:3005");
+  });
+
+  it("falls back to localhost:3000 when no host header is present and no LAN IP is found", () => {
+    const baseUrl = resolveQrBaseUrl(makeHeaders({}), undefined, null);
 
     expect(baseUrl).toBe("http://localhost:3000");
   });
